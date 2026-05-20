@@ -1,6 +1,6 @@
 """
 API для управления слотами экспертов: создание, редактирование, удаление,
-получение свободных слотов и всех слотов для администратора.
+получение свободных слотов и всех слотов для администратора. v3
 """
 import json
 import os
@@ -38,24 +38,8 @@ def handler(event: dict, context) -> dict:
         return {'statusCode': 200, 'headers': CORS_HEADERS, 'body': ''}
 
     method = event.get('httpMethod', 'GET')
-    path = event.get('path', '/')
     params = event.get('queryStringParameters') or {}
-
-    # Извлекаем slot_id из пути (последний сегмент, если не служебный)
-    path_parts = [p for p in path.strip('/').split('/') if p]
-    path_slot_id = None
-    if path_parts:
-        last = path_parts[-1]
-        if last not in ('slots', 'api', 'all', 'free', 'admin'):
-            path_slot_id = last
-
-    # action из query или из пути
     action = params.get('action', '')
-    if not action:
-        if 'admin' in path_parts or 'all' in path_parts:
-            action = 'admin'
-        elif 'free' in path_parts:
-            action = 'free'
 
     conn = get_conn()
     cur = conn.cursor()
@@ -137,16 +121,20 @@ def handler(event: dict, context) -> dict:
         conn.close()
         return resp(200, row_to_slot(row))
 
-    # PUT /{slot_id} — обновить слот
-    if method == 'PUT' and path_slot_id:
-        slot_id = path_slot_id
+    # PUT ?slot_id=... — обновить слот
+    if method == 'PUT':
         body = json.loads(event.get('body') or '{}')
+        slot_id = params.get('slot_id') or body.get('slot_id')
+        expert_id = body.get('expert_id')
+        if not slot_id:
+            conn.close()
+            return resp(400, {'detail': 'slot_id обязателен'})
         cur.execute("SELECT expert_id, status FROM slots WHERE id = %s", (slot_id,))
         existing = cur.fetchone()
         if not existing:
             conn.close()
             return resp(404, {'detail': 'Слот не найден'})
-        if existing[0] != body.get('expert_id'):
+        if existing[0] != expert_id:
             conn.close()
             return resp(403, {'detail': 'Нет прав'})
         if existing[1] != 'free':
@@ -161,10 +149,13 @@ def handler(event: dict, context) -> dict:
         conn.close()
         return resp(200, row_to_slot(row))
 
-    # DELETE /{slot_id}?expert_id=...
-    if method == 'DELETE' and path_slot_id:
-        slot_id = path_slot_id
+    # DELETE ?slot_id=...&expert_id=...
+    if method == 'DELETE':
+        slot_id = params.get('slot_id')
         expert_id = params.get('expert_id', '')
+        if not slot_id:
+            conn.close()
+            return resp(400, {'detail': 'slot_id обязателен'})
         cur.execute("SELECT expert_id, status FROM slots WHERE id = %s", (slot_id,))
         existing = cur.fetchone()
         if not existing:

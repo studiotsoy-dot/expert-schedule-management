@@ -81,7 +81,7 @@ export default function AdminView({ user }: Props) {
 
   const deleteUser = async (userId: string) => {
     if (!confirm('Удалить пользователя? Все его слоты будут удалены.')) return;
-    const res = await apiUsers(`/api/users/${userId}`, { method: 'DELETE' });
+    const res = await apiUsers(`/api/users?user_id=${userId}`, { method: 'DELETE' });
     if (res.ok) loadAll();
     else { const e = await res.json(); alert(e.detail || 'Ошибка'); }
   };

@@ -24,6 +24,12 @@ export default function ManagerView({ user }: Props) {
   const [clientEmail, setClientEmail] = useState('');
   const [bookLoading, setBookLoading] = useState(false);
 
+  const [rescheduleModal, setRescheduleModal] = useState<{ bookingId: string } | null>(null);
+  const [rescDate, setRescDate] = useState('');
+  const [rescStart, setRescStart] = useState('');
+  const [rescEnd, setRescEnd] = useState('');
+  const [rescLoading, setRescLoading] = useState(false);
+
   const load = async () => {
     setLoading(true);
     try {
@@ -67,20 +73,22 @@ export default function ManagerView({ user }: Props) {
     }
   };
 
-  const handleReschedule = async (bookingId: string) => {
-    const newDate = prompt('Введите новую дату (ГГГГ-ММ-ДД):');
-    if (!newDate) return;
-    const newStart = prompt('Время начала (ЧЧ:ММ):');
-    if (!newStart) return;
-    const newEnd = prompt('Время окончания (ЧЧ:ММ):');
-    if (!newEnd) return;
-    const res = await apiBookings('/api/bookings/reschedule', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ booking_id: bookingId, manager_id: user.id, new_date: newDate, new_start_time: newStart, new_end_time: newEnd }),
-    });
-    if (res.ok) { alert('Время переназначено!'); load(); }
-    else alert('Ошибка переназначения');
+  const handleReschedule = async () => {
+    if (!rescheduleModal || !rescDate || !rescStart || !rescEnd) return;
+    setRescLoading(true);
+    try {
+      const res = await apiBookings('/api/bookings?action=reschedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ booking_id: rescheduleModal.bookingId, manager_id: user.id, new_date: rescDate, new_start_time: rescStart, new_end_time: rescEnd }),
+      });
+      if (res.ok) {
+        setRescheduleModal(null); setRescDate(''); setRescStart(''); setRescEnd('');
+        load();
+      } else alert('Ошибка переназначения');
+    } finally {
+      setRescLoading(false);
+    }
   };
 
   return (
@@ -162,8 +170,11 @@ export default function ManagerView({ user }: Props) {
                       </td>
                       <td>
                         {b.call_status === 'reschedule_request' && (
-                          <button className="btn-primary btn-info text-xs py-1 px-2" onClick={() => handleReschedule(b.id)}>
-                            Перенести
+                          <button
+                            className="btn-primary btn-info text-xs py-1 px-2 whitespace-nowrap"
+                            onClick={() => { setRescheduleModal({ bookingId: b.id }); setRescDate(''); setRescStart(''); setRescEnd(''); }}
+                          >
+                            🔄 Перезаписать
                           </button>
                         )}
                       </td>
@@ -174,6 +185,38 @@ export default function ManagerView({ user }: Props) {
             </div>
           )}
         </>
+      )}
+
+      {/* Reschedule modal */}
+      {rescheduleModal && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+          <div className="animate-fade-in bg-slate-800 border border-slate-600 rounded-2xl p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-1">Перенести запись</h3>
+            <p className="text-slate-400 text-sm mb-4">Укажите новую дату и время</p>
+            <div className="space-y-3 mb-5">
+              <div>
+                <label className="text-xs text-slate-500 block mb-1">Новая дата</label>
+                <input type="date" className="form-input w-full" value={rescDate} onChange={e => setRescDate(e.target.value)} />
+              </div>
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <label className="text-xs text-slate-500 block mb-1">Начало</label>
+                  <input type="time" className="form-input w-full" value={rescStart} onChange={e => setRescStart(e.target.value)} />
+                </div>
+                <div className="flex-1">
+                  <label className="text-xs text-slate-500 block mb-1">Конец</label>
+                  <input type="time" className="form-input w-full" value={rescEnd} onChange={e => setRescEnd(e.target.value)} />
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button className="btn-primary btn-secondary" onClick={() => setRescheduleModal(null)}>Отмена</button>
+              <button className="btn-primary" onClick={handleReschedule} disabled={rescLoading || !rescDate || !rescStart || !rescEnd}>
+                {rescLoading ? 'Переносим...' : 'Перенести'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Book modal */}

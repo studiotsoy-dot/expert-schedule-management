@@ -89,18 +89,18 @@ def handler(event: dict, context) -> dict:
         return {'statusCode': 200, 'headers': CORS_HEADERS, 'body': ''}
 
     method = event.get('httpMethod', 'GET')
-    path = event.get('path', '/')
     params = event.get('queryStringParameters') or {}
+    action = params.get('action', '')
 
     conn = get_conn()
     cur = conn.cursor()
 
-    # GET /api/bookings/statuses
-    if method == 'GET' and path.endswith('/statuses'):
+    # GET ?action=statuses
+    if method == 'GET' and action == 'statuses':
         conn.close()
         return resp(200, {'statuses': CALL_STATUSES, 'names': STATUS_NAMES})
 
-    # GET /api/bookings?role=...&user_id=...
+    # GET ?role=...&user_id=...
     if method == 'GET':
         if not params.get('role'):
             conn.close()
@@ -128,8 +128,8 @@ def handler(event: dict, context) -> dict:
         conn.close()
         return resp(200, result)
 
-    # POST /api/bookings — создание записи
-    if method == 'POST' and (path.rstrip('/').endswith('/bookings') or path in ('/', '')):
+    # POST — создание записи (action пустой или 'book')
+    if method == 'POST' and action in ('', 'book'):
         body = json.loads(event.get('body') or '{}')
         slot_id = body.get('slot_id')
         cur.execute("SELECT status FROM slots WHERE id = %s", (slot_id,))
@@ -197,8 +197,8 @@ def handler(event: dict, context) -> dict:
 
         return resp(200, {'id': booking_id, 'zoom_link': zoom_link, 'status': 'pending'})
 
-    # POST /api/bookings/confirm
-    if method == 'POST' and path.endswith('/confirm'):
+    # POST ?action=confirm
+    if method == 'POST' and action == 'confirm':
         body = json.loads(event.get('body') or '{}')
         booking_id = body.get('booking_id')
         expert_id = body.get('expert_id')
@@ -241,8 +241,8 @@ def handler(event: dict, context) -> dict:
 
         return resp(200, {'status': 'confirmed'})
 
-    # POST /api/bookings/update-status
-    if method == 'POST' and path.endswith('/update-status'):
+    # POST ?action=update-status
+    if method == 'POST' and action == 'update-status':
         body = json.loads(event.get('body') or '{}')
         booking_id = body.get('booking_id')
         expert_id = body.get('expert_id')
@@ -292,8 +292,8 @@ def handler(event: dict, context) -> dict:
 
         return resp(200, {'status': new_status, 'comment': comment})
 
-    # POST /api/bookings/reschedule
-    if method == 'POST' and path.endswith('/reschedule'):
+    # POST ?action=reschedule
+    if method == 'POST' and action == 'reschedule':
         body = json.loads(event.get('body') or '{}')
         booking_id = body.get('booking_id')
         cur.execute("SELECT slot_id, client_email, client_name, zoom_link FROM bookings WHERE id = %s", (booking_id,))

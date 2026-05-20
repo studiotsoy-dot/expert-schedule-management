@@ -46,17 +46,18 @@ def handler(event: dict, context) -> dict:
     method = event.get('httpMethod', 'GET')
     path = event.get('path', '/')
 
-    # Извлекаем user_id из пути (любой формат: /{id} или /api/users/{id})
-    path_parts = [p for p in path.strip('/').split('/') if p]
-    # user_id — последний сегмент пути, если метод DELETE и сегмент не пустой
-    path_user_id = path_parts[-1] if path_parts and path_parts[-1] not in ('users', 'api') else None
+    params = event.get('queryStringParameters') or {}
 
     conn = get_conn()
     cur = conn.cursor()
 
-    # DELETE /{user_id}
-    if method == 'DELETE' and path_user_id:
-        user_id = path_user_id
+    # DELETE ?user_id=...
+    if method == 'DELETE':
+        user_id = params.get('user_id') or (event.get('body') and json.loads(event.get('body') or '{}')).get('user_id')
+        if not user_id:
+            conn.close()
+            return resp(400, {'detail': 'user_id обязателен'})
+
         cur.execute("SELECT id FROM users WHERE role = 'admin' AND is_active = 1")
         admins = cur.fetchall()
         cur.execute("SELECT role FROM users WHERE id = %s", (user_id,))

@@ -66,7 +66,7 @@ export default function ExpertView({ user }: Props) {
     const d = prompt('Новая дата (ГГГГ-ММ-ДД):', slot.date); if (!d) return;
     const s = prompt('Начало (ЧЧ:ММ):', slot.start_time); if (!s) return;
     const e = prompt('Конец (ЧЧ:ММ):', slot.end_time); if (!e) return;
-    const res = await apiSlots(`/api/slots/${slot.id}`, {
+    const res = await apiSlots(`/api/slots?slot_id=${slot.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ expert_id: user.id, date: d, start_time: s, end_time: e }),
@@ -76,13 +76,13 @@ export default function ExpertView({ user }: Props) {
 
   const deleteSlot = async (slotId: string) => {
     if (!confirm('Удалить этот слот?')) return;
-    const res = await apiSlots(`/api/slots/${slotId}?expert_id=${user.id}`, { method: 'DELETE' });
+    const res = await apiSlots(`/api/slots?slot_id=${slotId}&expert_id=${user.id}`, { method: 'DELETE' });
     if (res.ok) load(); else alert('Ошибка удаления');
   };
 
   const confirmStatusChange = async (comment: string) => {
     if (!statusModal) return;
-    const res = await apiBookings('/api/bookings/update-status', {
+    const res = await apiBookings('/api/bookings?action=update-status', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ booking_id: statusModal.bookingId, expert_id: user.id, status: statusModal.status, comment }),
