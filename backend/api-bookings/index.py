@@ -9,7 +9,7 @@ import uuid
 from datetime import datetime
 import psycopg2
 
-from email_utils import send_booking_created, send_status_changed, send_rescheduled, send_expert_new_booking
+from email_utils import send_booking_created, send_status_changed, send_rescheduled, send_expert_new_booking, send_expert_rescheduled
 
 CORS_HEADERS = {
     'Access-Control-Allow-Origin': '*',
@@ -302,11 +302,16 @@ def handler(event: dict, context) -> dict:
             conn.close()
             return resp(404, {'detail': 'Бронирование не найдено'})
         old_slot_id, client_email, client_name, zoom_link = row
-        cur.execute("SELECT expert_id FROM slots WHERE id = %s", (old_slot_id,))
+        cur.execute("SELECT expert_id, date, start_time FROM slots WHERE id = %s", (old_slot_id,))
         old_slot = cur.fetchone()
-        cur.execute("SELECT name FROM users WHERE id = %s", (old_slot[0],))
+        expert_id, old_date, old_start = old_slot[0], old_slot[1], old_slot[2]
+        cur.execute("SELECT name, email FROM users WHERE id = %s", (expert_id,))
         expert_row = cur.fetchone()
         expert_name = expert_row[0] if expert_row else ''
+        expert_email = expert_row[1] if expert_row else ''
+        cur.execute("SELECT name FROM users WHERE id = %s", (body.get('manager_id'),))
+        manager_row = cur.fetchone()
+        manager_name = manager_row[0] if manager_row else ''
 
         new_slot_id = str(uuid.uuid4())
         new_date = body['new_date']
@@ -315,7 +320,7 @@ def handler(event: dict, context) -> dict:
 
         cur.execute(
             "INSERT INTO slots (id, expert_id, date, start_time, end_time, status) VALUES (%s,%s,%s,%s,%s,'booked')",
-            (new_slot_id, old_slot[0], new_date, new_start, new_end)
+            (new_slot_id, expert_id, new_date, new_start, new_end)
         )
         cur.execute("UPDATE bookings SET slot_id=%s, call_status='pending', status='pending' WHERE id=%s", (new_slot_id, booking_id))
         cur.execute("UPDATE slots SET status='free' WHERE id=%s", (old_slot_id,))
@@ -332,7 +337,23 @@ def handler(event: dict, context) -> dict:
                 zoom_link=zoom_link,
             )
         except Exception as e:
-            print(f"Email error (reschedule): {e}")
+            print(f"Email error (client reschedule): {e}")
+
+        try:
+            send_expert_rescheduled(
+                to_email=expert_email,
+                expert_name=expert_name,
+                client_name=client_name,
+                old_date=old_date,
+                old_start=old_start,
+                new_date=new_date,
+                new_start_time=new_start,
+                new_end_time=new_end,
+                manager_name=manager_name,
+                zoom_link=zoom_link,
+            )
+        except Exception as e:
+            print(f"Email error (expert reschedule): {e}")
 
         return resp(200, {'new_slot_id': new_slot_id, 'date': new_date, 'start_time': new_start})
 

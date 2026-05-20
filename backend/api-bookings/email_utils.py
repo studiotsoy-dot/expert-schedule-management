@@ -150,6 +150,32 @@ def send_expert_new_booking(to_email: str, expert_name: str, client_name: str,
     _send(to_email, f'Новая запись: {client_name} — {date} {start_time}', _base_template('Новая запись', content))
 
 
+def send_expert_rescheduled(to_email: str, expert_name: str, client_name: str,
+                             old_date: str, old_start: str,
+                             new_date: str, new_start_time: str, new_end_time: str,
+                             manager_name: str, zoom_link: str):
+    """Письмо эксперту при переносе его записи менеджером."""
+    if not to_email:
+        return
+    content = f"""
+    <h2>Запись клиента перенесена</h2>
+    <p style="color:#94a3b8;font-size:14px;margin-bottom:20px">Здравствуйте, {expert_name}! Менеджер {manager_name} перенёс время записи клиента.</p>
+    <div class="row"><span class="label">Клиент:</span><span class="value"><strong>{client_name}</strong></span></div>
+    <div style="height:12px"></div>
+    <div class="row"><span class="label">Было:</span><span class="value" style="color:#94a3b8;text-decoration:line-through">{old_date} {old_start}</span></div>
+    <div class="row"><span class="label">Стало:</span><span class="value">{new_date} {new_start_time} – {new_end_time}</span></div>
+    <div class="row"><span class="label">Менеджер:</span><span class="value">{manager_name}</span></div>
+    <div class="badge" style="background:#3b82f6;color:white">🔄 Перенесено</div>
+    <br>
+    <a href="{zoom_link}" class="zoom-btn">🔗 Открыть Zoom</a>
+    """
+    _send(
+        to_email,
+        f'Запись перенесена: {client_name} — {new_date} {new_start_time}',
+        _base_template('Перенос записи', content)
+    )
+
+
 def send_rescheduled(to_email: str, client_name: str, expert_name: str,
                       new_date: str, new_start_time: str, zoom_link: str):
     """Письмо клиенту при переносе записи."""
