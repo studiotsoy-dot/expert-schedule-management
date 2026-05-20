@@ -6,7 +6,7 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-APP_URL = 'https://expert-schedule-management.poehali.dev'
+APP_URL = 'https://expert-schedule-management--preview.poehali.dev'
 
 STATUS_LABELS = {
     'pending': 'Ожидает подтверждения',
