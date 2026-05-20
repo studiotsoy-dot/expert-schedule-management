@@ -46,36 +46,42 @@ def handler(event: dict, context) -> dict:
     method = event.get('httpMethod', 'GET')
     path = event.get('path', '/')
 
+    # Извлекаем user_id из пути (любой формат: /{id} или /api/users/{id})
+    path_parts = [p for p in path.strip('/').split('/') if p]
+    # user_id — последний сегмент пути, если метод DELETE и сегмент не пустой
+    path_user_id = path_parts[-1] if path_parts and path_parts[-1] not in ('users', 'api') else None
+
     conn = get_conn()
     cur = conn.cursor()
 
-    # DELETE /api/users/{user_id}
-    if method == 'DELETE' and '/api/users/' in path:
-        user_id = path.split('/api/users/')[-1].strip('/')
-        # Проверка последнего админа
+    # DELETE /{user_id}
+    if method == 'DELETE' and path_user_id:
+        user_id = path_user_id
         cur.execute("SELECT id FROM users WHERE role = 'admin' AND is_active = 1")
         admins = cur.fetchall()
         cur.execute("SELECT role FROM users WHERE id = %s", (user_id,))
         row = cur.fetchone()
-        if row and row[0] == 'admin' and len(admins) <= 1:
+        if not row:
+            conn.close()
+            return resp(404, {'detail': 'Пользователь не найден'})
+        if row[0] == 'admin' and len(admins) <= 1:
             conn.close()
             return resp(403, {'detail': 'Нельзя удалить последнего администратора'})
-        # Удаляем слоты эксперта
-        if row and row[0] == 'expert':
+        if row[0] == 'expert':
             cur.execute("DELETE FROM slots WHERE expert_id = %s", (user_id,))
         cur.execute("DELETE FROM users WHERE id = %s", (user_id,))
         conn.commit()
         conn.close()
         return resp(200, {'status': 'deleted'})
 
-    # GET /api/users
+    # GET /
     if method == 'GET':
         cur.execute("SELECT id, name, email, role, portfolio_url, is_active, created_at FROM users ORDER BY created_at")
         rows = cur.fetchall()
         conn.close()
         return resp(200, [row_to_user(r) for r in rows])
 
-    # POST /api/users — регистрация / вход
+    # POST / — регистрация / вход
     if method == 'POST':
         body = json.loads(event.get('body') or '{}')
         name = body.get('name', '').strip()
@@ -87,7 +93,6 @@ def handler(event: dict, context) -> dict:
             conn.close()
             return resp(400, {'detail': 'Укажите имя и email'})
 
-        # Ищем существующего
         cur.execute("SELECT id, name, email, role, portfolio_url, is_active, created_at FROM users WHERE email = %s", (email,))
         existing = cur.fetchone()
         if existing:
@@ -101,7 +106,6 @@ def handler(event: dict, context) -> dict:
             conn.close()
             return resp(200, user)
 
-        # Создаём нового
         user_id = str(uuid.uuid4())
         now = datetime.now().isoformat()
         cur.execute(
@@ -113,7 +117,7 @@ def handler(event: dict, context) -> dict:
         conn.close()
         return resp(200, new_user)
 
-    # PUT /api/users — обновление роли/статуса/визитки
+    # PUT / — обновление роли/статуса/визитки
     if method == 'PUT':
         body = json.loads(event.get('body') or '{}')
         user_id = body.get('user_id')

@@ -100,13 +100,8 @@ export default function App() {
             href="https://t.me/StudioTSV"
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-2 text-slate-600 hover:text-teal-400 transition-colors text-xs"
+            className="text-slate-600 hover:text-teal-400 transition-colors text-xs"
           >
-            <img
-              src="https://sun9-3.userapi.com/s/v1/ig2/shp2FnodfETfPnsEOYqelTrsNWlPnlFDkpGDU5N6ePSx4DD14RN-ai6sM64wYF933pHrbKhZODqyYNktw2t6pJOP.jpg?quality=95&as=32x21,48x32,72x48,108x72,160x107&from=bu&u=4-H7jlO7a3aK8OOxovE0LmAGfrthlOH6eaLWGxs7UAY&cs=540x0"
-              alt="STUDIO TSOY"
-              className="h-7 w-auto rounded object-contain opacity-60"
-            />
             Разработано STUDIO TSOY
           </a>
         </div>

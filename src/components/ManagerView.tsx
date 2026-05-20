@@ -28,7 +28,7 @@ export default function ManagerView({ user }: Props) {
     setLoading(true);
     try {
       const [s, b] = await Promise.all([
-        apiSlots('/api/slots/free').then(r => r.json()),
+        apiSlots('/api/slots?action=free').then(r => r.json()),
         apiBookings(`/api/bookings?role=manager&user_id=${user.id}`).then(r => r.json()),
       ]);
       setFreeSlots(sortByDateTime(Array.isArray(s) ? s : []));

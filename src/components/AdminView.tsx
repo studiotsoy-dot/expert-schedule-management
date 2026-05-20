@@ -30,7 +30,7 @@ export default function AdminView({ user }: Props) {
     setLoading(true);
     try {
       const [s, b, u] = await Promise.all([
-        apiSlots('/api/slots/admin/all').then(r => r.json()),
+        apiSlots('/api/slots?action=admin').then(r => r.json()),
         apiBookings(`/api/bookings?role=admin&user_id=${user.id}`).then(r => r.json()),
         apiUsers('/api/users').then(r => r.json()),
       ]);

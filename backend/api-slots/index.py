@@ -41,17 +41,32 @@ def handler(event: dict, context) -> dict:
     path = event.get('path', '/')
     params = event.get('queryStringParameters') or {}
 
+    # Извлекаем slot_id из пути (последний сегмент, если не служебный)
+    path_parts = [p for p in path.strip('/').split('/') if p]
+    path_slot_id = None
+    if path_parts:
+        last = path_parts[-1]
+        if last not in ('slots', 'api', 'all', 'free', 'admin'):
+            path_slot_id = last
+
+    # action из query или из пути
+    action = params.get('action', '')
+    if not action:
+        if 'admin' in path_parts or 'all' in path_parts:
+            action = 'admin'
+        elif 'free' in path_parts:
+            action = 'free'
+
     conn = get_conn()
     cur = conn.cursor()
 
-    # GET /api/slots/admin/all
-    if method == 'GET' and path.endswith('/admin/all'):
-        cur.execute("SELECT id, expert_id, date, start_time, end_time, status FROM slots")
+    # GET ?action=admin — все слоты для администратора
+    if method == 'GET' and action == 'admin':
+        cur.execute("SELECT id, expert_id, date, start_time, end_time, status FROM slots ORDER BY date, start_time")
         slots = cur.fetchall()
         result = []
         for s in slots:
             slot_dict = row_to_slot(s)
-            # Эксперт
             cur.execute("SELECT name, email, portfolio_url FROM users WHERE id = %s", (s[1],))
             expert = cur.fetchone()
             if not expert:
@@ -59,7 +74,6 @@ def handler(event: dict, context) -> dict:
             slot_dict['expert_name'] = expert[0]
             slot_dict['expert_email'] = expert[1]
             slot_dict['expert_portfolio'] = expert[2] or ''
-            # Бронирование
             cur.execute(
                 "SELECT client_name, client_phone, client_email, status, call_status, call_comment, zoom_link, manager_id FROM bookings WHERE slot_id = %s LIMIT 1",
                 (s[0],)
@@ -82,9 +96,9 @@ def handler(event: dict, context) -> dict:
         conn.close()
         return resp(200, result)
 
-    # GET /api/slots/free
-    if method == 'GET' and path.endswith('/free'):
-        cur.execute("SELECT id, expert_id, date, start_time, end_time, status FROM slots WHERE status = 'free'")
+    # GET ?action=free — свободные слоты для менеджера
+    if method == 'GET' and action == 'free':
+        cur.execute("SELECT id, expert_id, date, start_time, end_time, status FROM slots WHERE status = 'free' ORDER BY date, start_time")
         slots = cur.fetchall()
         result = []
         for s in slots:
@@ -99,18 +113,18 @@ def handler(event: dict, context) -> dict:
         conn.close()
         return resp(200, result)
 
-    # GET /api/slots?expert_id=...
+    # GET ?expert_id=... — слоты конкретного эксперта
     if method == 'GET':
         expert_id = params.get('expert_id')
         if expert_id:
-            cur.execute("SELECT id, expert_id, date, start_time, end_time, status FROM slots WHERE expert_id = %s", (expert_id,))
+            cur.execute("SELECT id, expert_id, date, start_time, end_time, status FROM slots WHERE expert_id = %s ORDER BY date, start_time", (expert_id,))
         else:
-            cur.execute("SELECT id, expert_id, date, start_time, end_time, status FROM slots")
+            cur.execute("SELECT id, expert_id, date, start_time, end_time, status FROM slots ORDER BY date, start_time")
         rows = cur.fetchall()
         conn.close()
         return resp(200, [row_to_slot(r) for r in rows])
 
-    # POST /api/slots
+    # POST / — создать слот
     if method == 'POST':
         body = json.loads(event.get('body') or '{}')
         slot_id = str(uuid.uuid4())
@@ -123,9 +137,9 @@ def handler(event: dict, context) -> dict:
         conn.close()
         return resp(200, row_to_slot(row))
 
-    # PUT /api/slots/{slot_id}
-    if method == 'PUT' and '/api/slots/' in path:
-        slot_id = path.split('/api/slots/')[-1].strip('/')
+    # PUT /{slot_id} — обновить слот
+    if method == 'PUT' and path_slot_id:
+        slot_id = path_slot_id
         body = json.loads(event.get('body') or '{}')
         cur.execute("SELECT expert_id, status FROM slots WHERE id = %s", (slot_id,))
         existing = cur.fetchone()
@@ -147,9 +161,9 @@ def handler(event: dict, context) -> dict:
         conn.close()
         return resp(200, row_to_slot(row))
 
-    # DELETE /api/slots/{slot_id}
-    if method == 'DELETE' and '/api/slots/' in path:
-        slot_id = path.split('/api/slots/')[-1].strip('/').split('?')[0]
+    # DELETE /{slot_id}?expert_id=...
+    if method == 'DELETE' and path_slot_id:
+        slot_id = path_slot_id
         expert_id = params.get('expert_id', '')
         cur.execute("SELECT expert_id, status FROM slots WHERE id = %s", (slot_id,))
         existing = cur.fetchone()
