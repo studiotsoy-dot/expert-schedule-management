@@ -123,6 +123,33 @@ def send_status_changed(to_email: str, client_name: str, expert_name: str,
     _send(to_email, f'Статус записи: {label} — {date}', _base_template('Изменение статуса', content))
 
 
+def send_expert_new_booking(to_email: str, expert_name: str, client_name: str,
+                             client_phone: str, client_email: str,
+                             date: str, start_time: str, end_time: str,
+                             manager_name: str, zoom_link: str):
+    """Письмо эксперту при новой записи клиента к нему."""
+    if not to_email:
+        return
+    phone_row = f'<div class="row"><span class="label">Телефон:</span><span class="value">{client_phone}</span></div>' if client_phone else ''
+    email_row = f'<div class="row"><span class="label">Email:</span><span class="value">{client_email}</span></div>' if client_email else ''
+    content = f"""
+    <h2>Новая запись клиента!</h2>
+    <p style="color:#94a3b8;font-size:14px;margin-bottom:20px">Здравствуйте, {expert_name}! К вам записался новый клиент.</p>
+    <div class="row"><span class="label">Клиент:</span><span class="value"><strong>{client_name}</strong></span></div>
+    {phone_row}
+    {email_row}
+    <div style="height:12px"></div>
+    <div class="row"><span class="label">Дата:</span><span class="value">{date}</span></div>
+    <div class="row"><span class="label">Время:</span><span class="value">{start_time} – {end_time}</span></div>
+    <div class="row"><span class="label">Менеджер:</span><span class="value">{manager_name}</span></div>
+    <div class="badge" style="background:#f59e0b;color:#1a1a2e">⏳ Ожидает подтверждения</div>
+    <br>
+    <a href="{zoom_link}" class="zoom-btn">🔗 Открыть Zoom</a>
+    <p style="color:#64748b;font-size:12px;margin-top:16px">Войдите в систему, чтобы подтвердить или изменить статус записи.</p>
+    """
+    _send(to_email, f'Новая запись: {client_name} — {date} {start_time}', _base_template('Новая запись', content))
+
+
 def send_rescheduled(to_email: str, client_name: str, expert_name: str,
                       new_date: str, new_start_time: str, zoom_link: str):
     """Письмо клиенту при переносе записи."""

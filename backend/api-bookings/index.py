@@ -9,7 +9,7 @@ import uuid
 from datetime import datetime
 import psycopg2
 
-from email_utils import send_booking_created, send_status_changed, send_rescheduled
+from email_utils import send_booking_created, send_status_changed, send_rescheduled, send_expert_new_booking
 
 CORS_HEADERS = {
     'Access-Control-Allow-Origin': '*',
@@ -142,9 +142,13 @@ def handler(event: dict, context) -> dict:
         cur.execute("SELECT date, start_time, end_time, expert_id FROM slots WHERE id = %s", (slot_id,))
         slot_data = cur.fetchone()
         date, start_time, end_time, expert_id = slot_data
-        cur.execute("SELECT name FROM users WHERE id = %s", (expert_id,))
+        cur.execute("SELECT name, email FROM users WHERE id = %s", (expert_id,))
         expert_row = cur.fetchone()
         expert_name = expert_row[0] if expert_row else ''
+        expert_email = expert_row[1] if expert_row else ''
+        cur.execute("SELECT name FROM users WHERE id = %s", (body['manager_id'],))
+        manager_row = cur.fetchone()
+        manager_name = manager_row[0] if manager_row else ''
 
         booking_id = str(uuid.uuid4())
         zoom_link = generate_zoom_link()
@@ -161,7 +165,7 @@ def handler(event: dict, context) -> dict:
         conn.commit()
         conn.close()
 
-        # Отправляем email (после коммита, ошибка письма не ломает ответ)
+        # Отправляем emails (после коммита, ошибка письма не ломает ответ)
         try:
             send_booking_created(
                 to_email=client_email,
@@ -173,7 +177,23 @@ def handler(event: dict, context) -> dict:
                 zoom_link=zoom_link,
             )
         except Exception as e:
-            print(f"Email error (booking created): {e}")
+            print(f"Email error (client booking created): {e}")
+
+        try:
+            send_expert_new_booking(
+                to_email=expert_email,
+                expert_name=expert_name,
+                client_name=client_name,
+                client_phone=body.get('client_phone', ''),
+                client_email=client_email,
+                date=date,
+                start_time=start_time,
+                end_time=end_time,
+                manager_name=manager_name,
+                zoom_link=zoom_link,
+            )
+        except Exception as e:
+            print(f"Email error (expert new booking): {e}")
 
         return resp(200, {'id': booking_id, 'zoom_link': zoom_link, 'status': 'pending'})
 
