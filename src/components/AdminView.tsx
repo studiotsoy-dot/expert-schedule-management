@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import Icon from '@/components/ui/icon';
 import StatusBadge from './StatusBadge';
 import { User, Slot, Booking } from '@/types';
-
-const API = '';
+import { apiUsers, apiSlots, apiBookings } from '@/lib/api';
 
 interface Props { user: User; }
 
@@ -31,9 +30,9 @@ export default function AdminView({ user }: Props) {
     setLoading(true);
     try {
       const [s, b, u] = await Promise.all([
-        fetch(`${API}/api/slots/admin/all`).then(r => r.json()),
-        fetch(`${API}/api/bookings?role=admin&user_id=${user.id}`).then(r => r.json()),
-        fetch(`${API}/api/users`).then(r => r.json()),
+        apiSlots('/api/slots/admin/all').then(r => r.json()),
+        apiBookings(`/api/bookings?role=admin&user_id=${user.id}`).then(r => r.json()),
+        apiUsers('/api/users').then(r => r.json()),
       ]);
       setSlots(sortByDateTime(Array.isArray(s) ? s : []));
       setBookings(sortByDateTime(Array.isArray(b) ? b : []));
@@ -61,7 +60,7 @@ export default function AdminView({ user }: Props) {
     const newRole = editRoles[userId];
     const portfolioUrl = editPortfolios[userId] || '';
     if (!confirm(`Сохранить изменения для пользователя?`)) return;
-    const res = await fetch(`${API}/api/users`, {
+    const res = await apiUsers('/api/users', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id: userId, role: newRole, portfolio_url: portfolioUrl }),
@@ -72,7 +71,7 @@ export default function AdminView({ user }: Props) {
 
   const toggleBlock = async (userId: string, unblock: boolean) => {
     if (!confirm(`${unblock ? 'Разблокировать' : 'Заблокировать'} пользователя?`)) return;
-    const res = await fetch(`${API}/api/users`, {
+    const res = await apiUsers('/api/users', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id: userId, is_active: unblock }),
@@ -82,7 +81,7 @@ export default function AdminView({ user }: Props) {
 
   const deleteUser = async (userId: string) => {
     if (!confirm('Удалить пользователя? Все его слоты будут удалены.')) return;
-    const res = await fetch(`${API}/api/users/${userId}`, { method: 'DELETE' });
+    const res = await apiUsers(`/api/users/${userId}`, { method: 'DELETE' });
     if (res.ok) loadAll();
     else { const e = await res.json(); alert(e.detail || 'Ошибка'); }
   };

@@ -3,8 +3,7 @@ import Icon from '@/components/ui/icon';
 import StatusBadge from './StatusBadge';
 import StatusModal from './StatusModal';
 import { User, Slot, Booking, CallStatus } from '@/types';
-
-const API = '';
+import { apiSlots, apiBookings } from '@/lib/api';
 
 interface Props { user: User; }
 
@@ -40,8 +39,8 @@ export default function ExpertView({ user }: Props) {
     setLoading(true);
     try {
       const [s, b] = await Promise.all([
-        fetch(`${API}/api/slots?expert_id=${user.id}`).then(r => r.json()),
-        fetch(`${API}/api/bookings?role=expert&user_id=${user.id}`).then(r => r.json()),
+        apiSlots(`/api/slots?expert_id=${user.id}`).then(r => r.json()),
+        apiBookings(`/api/bookings?role=expert&user_id=${user.id}`).then(r => r.json()),
       ]);
       setSlots(sortByDateTime(Array.isArray(s) ? s : []));
       setBookings(sortByDateTime(Array.isArray(b) ? b : []));
@@ -54,7 +53,7 @@ export default function ExpertView({ user }: Props) {
 
   const createSlot = async () => {
     if (!newDate || !newStart || !newEnd) { alert('Заполните дату и время'); return; }
-    const res = await fetch(`${API}/api/slots`, {
+    const res = await apiSlots('/api/slots', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ expert_id: user.id, date: newDate, start_time: newStart, end_time: newEnd }),
@@ -67,7 +66,7 @@ export default function ExpertView({ user }: Props) {
     const d = prompt('Новая дата (ГГГГ-ММ-ДД):', slot.date); if (!d) return;
     const s = prompt('Начало (ЧЧ:ММ):', slot.start_time); if (!s) return;
     const e = prompt('Конец (ЧЧ:ММ):', slot.end_time); if (!e) return;
-    const res = await fetch(`${API}/api/slots/${slot.id}`, {
+    const res = await apiSlots(`/api/slots/${slot.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ expert_id: user.id, date: d, start_time: s, end_time: e }),
@@ -77,13 +76,13 @@ export default function ExpertView({ user }: Props) {
 
   const deleteSlot = async (slotId: string) => {
     if (!confirm('Удалить этот слот?')) return;
-    const res = await fetch(`${API}/api/slots/${slotId}?expert_id=${user.id}`, { method: 'DELETE' });
+    const res = await apiSlots(`/api/slots/${slotId}?expert_id=${user.id}`, { method: 'DELETE' });
     if (res.ok) load(); else alert('Ошибка удаления');
   };
 
   const confirmStatusChange = async (comment: string) => {
     if (!statusModal) return;
-    const res = await fetch(`${API}/api/bookings/update-status`, {
+    const res = await apiBookings('/api/bookings/update-status', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ booking_id: statusModal.bookingId, expert_id: user.id, status: statusModal.status, comment }),

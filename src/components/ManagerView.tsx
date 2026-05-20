@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import Icon from '@/components/ui/icon';
 import StatusBadge from './StatusBadge';
 import { User, Slot, Booking } from '@/types';
-
-const API = '';
+import { apiSlots, apiBookings } from '@/lib/api';
 
 interface Props { user: User; }
 
@@ -29,8 +28,8 @@ export default function ManagerView({ user }: Props) {
     setLoading(true);
     try {
       const [s, b] = await Promise.all([
-        fetch(`${API}/api/slots/free`).then(r => r.json()),
-        fetch(`${API}/api/bookings?role=manager&user_id=${user.id}`).then(r => r.json()),
+        apiSlots('/api/slots/free').then(r => r.json()),
+        apiBookings(`/api/bookings?role=manager&user_id=${user.id}`).then(r => r.json()),
       ]);
       setFreeSlots(sortByDateTime(Array.isArray(s) ? s : []));
       setBookings(sortByDateTime(Array.isArray(b) ? b : []));
@@ -45,7 +44,7 @@ export default function ManagerView({ user }: Props) {
     if (!bookModal || !clientName.trim()) return;
     setBookLoading(true);
     try {
-      const res = await fetch(`${API}/api/bookings`, {
+      const res = await apiBookings('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -75,7 +74,7 @@ export default function ManagerView({ user }: Props) {
     if (!newStart) return;
     const newEnd = prompt('Время окончания (ЧЧ:ММ):');
     if (!newEnd) return;
-    const res = await fetch(`${API}/api/bookings/reschedule`, {
+    const res = await apiBookings('/api/bookings/reschedule', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ booking_id: bookingId, manager_id: user.id, new_date: newDate, new_start_time: newStart, new_end_time: newEnd }),

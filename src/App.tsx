@@ -5,8 +5,8 @@ import ManagerView from '@/components/ManagerView';
 import ExpertView from '@/components/ExpertView';
 import AdminView from '@/components/AdminView';
 import { User, UserRole, ADMIN_EMAIL } from '@/types';
+import { apiUsers } from '@/lib/api';
 
-const API = '';
 const STORAGE_KEY = 'asm_scheduler_user';
 
 const ROLE_LABELS: Record<UserRole, string> = {
@@ -29,7 +29,7 @@ export default function App() {
     if (role === 'admin' && email !== ADMIN_EMAIL) {
       throw new Error('Роль Администратора доступна только для studiotsoy@gmail.com');
     }
-    const res = await fetch(`${API}/api/users`, {
+    const res = await apiUsers('/api/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, role }),
