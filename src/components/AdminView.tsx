@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Icon from '@/components/ui/icon';
 import StatusBadge from './StatusBadge';
+import CommentCell from './CommentCell';
 import { User, Slot, Booking } from '@/types';
 import { apiUsers, apiSlots, apiBookings } from '@/lib/api';
 
@@ -26,8 +27,8 @@ export default function AdminView({ user }: Props) {
   const [editPortfolios, setEditPortfolios] = useState<Record<string, string>>({});
   const [editRoles, setEditRoles] = useState<Record<string, string>>({});
 
-  const loadAll = async () => {
-    setLoading(true);
+  const fetchAll = async (showLoader = false) => {
+    if (showLoader) setLoading(true);
     try {
       const [s, b, u] = await Promise.all([
         apiSlots('/api/slots?action=admin').then(r => r.json()),
@@ -47,11 +48,17 @@ export default function AdminView({ user }: Props) {
       setEditPortfolios(portfolioMap);
       setEditRoles(roleMap);
     } finally {
-      setLoading(false);
+      if (showLoader) setLoading(false);
     }
   };
 
-  useEffect(() => { loadAll(); }, []);
+  const loadAll = () => fetchAll(true);
+
+  useEffect(() => {
+    fetchAll(true);
+    const interval = setInterval(() => fetchAll(false), 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const experts = users.filter(u => u.role === 'expert');
   const filteredSlots = expertFilter === 'all' ? slots : slots.filter(s => s.expert_id === expertFilter);
@@ -138,7 +145,7 @@ export default function AdminView({ user }: Props) {
                         <td className="text-slate-400">{slot.booking.client_phone || '—'}</td>
                         <td className="text-slate-400">{slot.booking.client_email || '—'}</td>
                         <td><StatusBadge status={slot.booking.call_status} /></td>
-                        <td className="text-slate-400 max-w-[120px] truncate">{slot.booking.call_comment || '—'}</td>
+                        <td><CommentCell text={slot.booking.call_comment || '—'} /></td>
                         <td className="text-slate-400">{slot.booking.manager_name || '—'}</td>
                         <td>{slot.booking.zoom_link ? <a href={slot.booking.zoom_link} target="_blank" rel="noreferrer" className="text-sky-400 hover:underline text-xs">🔗 Zoom</a> : '—'}</td>
                       </>
@@ -176,7 +183,7 @@ export default function AdminView({ user }: Props) {
                   <td className="whitespace-nowrap">{b.date} {b.start_time}</td>
                   <td className="text-slate-400">{b.manager_name || '—'}</td>
                   <td><StatusBadge status={b.call_status} /></td>
-                  <td className="text-slate-400 max-w-[140px] truncate">{b.call_comment || '—'}</td>
+                  <td><CommentCell text={b.call_comment || '—'} /></td>
                   <td>{b.zoom_link ? <a href={b.zoom_link} target="_blank" rel="noreferrer" className="text-sky-400 hover:underline text-xs">🔗 Zoom</a> : '—'}</td>
                 </tr>
               ))}

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Icon from '@/components/ui/icon';
 import StatusBadge from './StatusBadge';
+import CommentCell from './CommentCell';
 import { User, Slot, Booking } from '@/types';
 import { apiSlots, apiBookings } from '@/lib/api';
 
@@ -30,8 +31,8 @@ export default function ManagerView({ user }: Props) {
   const [rescEnd, setRescEnd] = useState('');
   const [rescLoading, setRescLoading] = useState(false);
 
-  const load = async () => {
-    setLoading(true);
+  const fetchData = async (showLoader = false) => {
+    if (showLoader) setLoading(true);
     try {
       const [s, b] = await Promise.all([
         apiSlots('/api/slots?action=free').then(r => r.json()),
@@ -40,11 +41,17 @@ export default function ManagerView({ user }: Props) {
       setFreeSlots(sortByDateTime(Array.isArray(s) ? s : []));
       setBookings(sortByDateTime(Array.isArray(b) ? b : []));
     } finally {
-      setLoading(false);
+      if (showLoader) setLoading(false);
     }
   };
 
-  useEffect(() => { load(); }, []);
+  const load = () => fetchData(true);
+
+  useEffect(() => {
+    fetchData(true);
+    const interval = setInterval(() => fetchData(false), 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleBook = async () => {
     if (!bookModal || !clientName.trim()) return;
@@ -164,7 +171,7 @@ export default function ManagerView({ user }: Props) {
                       </td>
                       <td className="whitespace-nowrap">{b.date} {b.start_time}</td>
                       <td><StatusBadge status={b.call_status} /></td>
-                      <td className="text-slate-400 max-w-[150px] truncate">{b.call_comment || '—'}</td>
+                      <td><CommentCell text={b.call_comment || '—'} /></td>
                       <td>
                         {b.zoom_link ? <a href={b.zoom_link} target="_blank" rel="noreferrer" className="text-sky-400 hover:underline text-xs">🔗 Zoom</a> : '—'}
                       </td>

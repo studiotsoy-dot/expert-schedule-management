@@ -35,8 +35,8 @@ export default function ExpertView({ user }: Props) {
 
   const [statusModal, setStatusModal] = useState<{ bookingId: string; status: CallStatus } | null>(null);
 
-  const load = async () => {
-    setLoading(true);
+  const fetchData = async (showLoader = false) => {
+    if (showLoader) setLoading(true);
     try {
       const [s, b] = await Promise.all([
         apiSlots(`/api/slots?expert_id=${user.id}`).then(r => r.json()),
@@ -45,11 +45,17 @@ export default function ExpertView({ user }: Props) {
       setSlots(sortByDateTime(Array.isArray(s) ? s : []));
       setBookings(sortByDateTime(Array.isArray(b) ? b : []));
     } finally {
-      setLoading(false);
+      if (showLoader) setLoading(false);
     }
   };
 
-  useEffect(() => { load(); }, []);
+  const load = () => fetchData(true);
+
+  useEffect(() => {
+    fetchData(true);
+    const interval = setInterval(() => fetchData(false), 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const createSlot = async () => {
     if (!newDate || !newStart || !newEnd) { alert('Заполните дату и время'); return; }
