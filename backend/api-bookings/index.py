@@ -129,7 +129,7 @@ def handler(event: dict, context) -> dict:
         return resp(200, result)
 
     # POST /api/bookings — создание записи
-    if method == 'POST' and path.rstrip('/').endswith('/bookings'):
+    if method == 'POST' and (path.rstrip('/').endswith('/bookings') or path in ('/', '')):
         body = json.loads(event.get('body') or '{}')
         slot_id = body.get('slot_id')
         cur.execute("SELECT status FROM slots WHERE id = %s", (slot_id,))
