@@ -49,8 +49,6 @@ export default function ManagerView({ user }: Props) {
 
   useEffect(() => {
     fetchData(true);
-    const interval = setInterval(() => fetchData(false), 30000);
-    return () => clearInterval(interval);
   }, []);
 
   const handleBook = async () => {
@@ -100,7 +98,7 @@ export default function ManagerView({ user }: Props) {
 
   return (
     <div className="animate-fade-in">
-      <div className="flex gap-2 mb-5 border-b border-white/10 pb-3">
+      <div className="flex gap-2 mb-5 border-b border-white/10 pb-3 items-center">
         {([['slots', 'Свободные слоты', 'Calendar'], ['bookings', 'Мои записи', 'ClipboardList']] as const).map(([t, label, icon]) => (
           <button key={t} onClick={() => setTab(t)} className={`tab-item flex items-center gap-2 ${tab === t ? 'active' : ''}`}>
             <Icon name={icon as 'Home'} size={15} />
@@ -110,6 +108,10 @@ export default function ManagerView({ user }: Props) {
             )}
           </button>
         ))}
+        <button onClick={load} className="ml-auto btn-primary flex items-center gap-2 text-sm py-2 px-4">
+          <Icon name="RefreshCw" size={14} />
+          Обновить
+        </button>
       </div>
 
       {loading && <div className="text-slate-400 text-sm py-8 text-center">Загружаем...</div>}

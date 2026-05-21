@@ -57,8 +57,6 @@ export default function AdminView({ user }: Props) {
 
   useEffect(() => {
     fetchAll(true);
-    const interval = setInterval(() => fetchAll(false), 30000);
-    return () => clearInterval(interval);
   }, []);
 
   const experts = users.filter(u => u.role === 'expert');
@@ -156,13 +154,16 @@ export default function AdminView({ user }: Props) {
             )}
           </button>
         ))}
-        <button
-          onClick={exportToExcel}
-          className="ml-auto btn-primary flex items-center gap-2 text-sm py-2 px-4"
-        >
-          <Icon name="Download" size={15} />
-          Экспорт в Excel
-        </button>
+        <div className="ml-auto flex gap-2">
+          <button onClick={loadAll} className="btn-primary flex items-center gap-2 text-sm py-2 px-4">
+            <Icon name="RefreshCw" size={14} />
+            Обновить
+          </button>
+          <button onClick={exportToExcel} className="btn-primary flex items-center gap-2 text-sm py-2 px-4">
+            <Icon name="Download" size={15} />
+            Экспорт в Excel
+          </button>
+        </div>
       </div>
 
       {loading && <div className="text-slate-400 text-sm py-8 text-center">Загружаем...</div>}
