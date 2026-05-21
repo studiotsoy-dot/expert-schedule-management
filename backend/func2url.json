@@ -1,3 +1,5 @@
 {
-  "api-users": "https://functions.poehali.dev/ddf803a8-6082-4488-af70-09d8797c2545"
+  "api-bookings": "https://functions.poehali.dev/cee499ed-5139-4cf0-9978-e4d793c73aa3",
+  "api-users": "https://functions.poehali.dev/ddf803a8-6082-4488-af70-09d8797c2545",
+  "api-slots": "https://functions.poehali.dev/1d7aaabb-f9ae-43c0-b748-cc9e4e540f33"
 }

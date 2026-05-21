@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import * as XLSX from 'xlsx';
 import Icon from '@/components/ui/icon';
 import StatusBadge from './StatusBadge';
 import CommentCell from './CommentCell';
@@ -93,9 +94,59 @@ export default function AdminView({ user }: Props) {
     else { const e = await res.json(); alert(e.detail || 'Ошибка'); }
   };
 
+  const exportToExcel = () => {
+    const STATUS_MAP: Record<string, string> = {
+      free: 'Свободен', booked: 'Забронирован', confirmed: 'Подтверждён',
+      pending: 'Ожидает', success: 'Успешно', cancelled_by_client: 'Отменён клиентом',
+      cancelled_by_expert: 'Отменён экспертом', failed: 'Не состоялся', reschedule_request: 'Перенос',
+    };
+
+    const bookingsSheet = bookings.map(b => ({
+      'Клиент': b.client_name,
+      'Email клиента': b.client_email || '',
+      'Телефон клиента': b.client_phone || '',
+      'Эксперт': b.expert_name || '',
+      'Дата': b.date || '',
+      'Время': b.start_time ? `${b.start_time} — ${b.end_time}` : '',
+      'Менеджер': b.manager_name || '',
+      'Статус записи': STATUS_MAP[b.status] || b.status,
+      'Статус созвона': STATUS_MAP[b.call_status] || b.call_status,
+      'Комментарий': b.call_comment || '',
+      'Zoom': b.zoom_link || '',
+    }));
+
+    const slotsSheet = slots.map(s => ({
+      'Эксперт': s.expert_name || '',
+      'Email эксперта': s.expert_email || '',
+      'Дата': s.date,
+      'Начало': s.start_time,
+      'Конец': s.end_time,
+      'Статус': STATUS_MAP[s.status] || s.status,
+      'Клиент': s.booking?.client_name || '',
+      'Телефон': s.booking?.client_phone || '',
+    }));
+
+    const usersSheet = users.map(u => ({
+      'Имя': u.name,
+      'Email': u.email,
+      'Роль': u.role === 'admin' ? 'Администратор' : u.role === 'expert' ? 'Эксперт' : 'Менеджер',
+      'Статус': u.is_active !== false ? 'Активен' : 'Заблокирован',
+      'Визитка': u.portfolio_url || '',
+      'Дата регистрации': u.created_at ? u.created_at.slice(0, 10) : '',
+    }));
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(bookingsSheet), 'Записи');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(slotsSheet), 'Слоты');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(usersSheet), 'Пользователи');
+
+    const date = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `ASM_export_${date}.xlsx`);
+  };
+
   return (
     <div className="animate-fade-in">
-      <div className="flex gap-2 mb-5 border-b border-white/10 pb-3 flex-wrap">
+      <div className="flex gap-2 mb-5 border-b border-white/10 pb-3 flex-wrap items-center">
         {([['slots', 'Слоты экспертов', 'CalendarDays'], ['bookings', 'Все записи', 'ClipboardList'], ['users', 'Пользователи', 'Users']] as const).map(([t, label, icon]) => (
           <button key={t} onClick={() => setTab(t)} className={`tab-item flex items-center gap-2 ${tab === t ? 'active' : ''}`}>
             <Icon name={icon as 'Home'} size={15} />
@@ -105,6 +156,13 @@ export default function AdminView({ user }: Props) {
             )}
           </button>
         ))}
+        <button
+          onClick={exportToExcel}
+          className="ml-auto btn-primary flex items-center gap-2 text-sm py-2 px-4"
+        >
+          <Icon name="Download" size={15} />
+          Экспорт в Excel
+        </button>
       </div>
 
       {loading && <div className="text-slate-400 text-sm py-8 text-center">Загружаем...</div>}
