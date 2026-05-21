@@ -1,12 +1,22 @@
 {
   "tests": [
     {
-      "name": "GET free slots",
+      "name": "GET all slots returns 200",
       "method": "GET",
       "path": "/",
-      "expectedStatus": 200,
-      "expectedBody": [],
-      "bodyMatcher": "partial"
+      "expectedStatus": 200
+    },
+    {
+      "name": "GET free slots returns 200",
+      "method": "GET",
+      "path": "/?action=free",
+      "expectedStatus": 200
+    },
+    {
+      "name": "GET admin slots returns 200",
+      "method": "GET",
+      "path": "/?action=admin",
+      "expectedStatus": 200
     }
   ]
 }

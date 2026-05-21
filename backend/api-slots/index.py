@@ -46,35 +46,37 @@ def handler(event: dict, context) -> dict:
 
     # GET ?action=admin — все слоты для администратора
     if method == 'GET' and action == 'admin':
-        cur.execute("SELECT id, expert_id, date, start_time, end_time, status FROM slots ORDER BY date, start_time")
-        slots = cur.fetchall()
+        cur.execute("""
+            SELECT
+                s.id, s.expert_id, s.date, s.start_time, s.end_time, s.status,
+                e.name, e.email, e.portfolio_url,
+                b.client_name, b.client_phone, b.client_email,
+                b.status, b.call_status, b.call_comment, b.zoom_link,
+                m.name
+            FROM slots s
+            JOIN users e ON e.id = s.expert_id
+            LEFT JOIN bookings b ON b.slot_id = s.id
+            LEFT JOIN users m ON m.id = b.manager_id
+            ORDER BY s.date, s.start_time
+        """)
+        rows = cur.fetchall()
         result = []
-        for s in slots:
-            slot_dict = row_to_slot(s)
-            cur.execute("SELECT name, email, portfolio_url FROM users WHERE id = %s", (s[1],))
-            expert = cur.fetchone()
-            if not expert:
-                continue
-            slot_dict['expert_name'] = expert[0]
-            slot_dict['expert_email'] = expert[1]
-            slot_dict['expert_portfolio'] = expert[2] or ''
-            cur.execute(
-                "SELECT client_name, client_phone, client_email, status, call_status, call_comment, zoom_link, manager_id FROM bookings WHERE slot_id = %s LIMIT 1",
-                (s[0],)
-            )
-            booking = cur.fetchone()
-            if booking:
-                cur.execute("SELECT name FROM users WHERE id = %s", (booking[7],))
-                mgr = cur.fetchone()
+        for r in rows:
+            slot_dict = {
+                'id': r[0], 'expert_id': r[1], 'date': r[2],
+                'start_time': r[3], 'end_time': r[4], 'status': r[5],
+                'expert_name': r[6], 'expert_email': r[7], 'expert_portfolio': r[8] or '',
+            }
+            if r[9]:
                 slot_dict['booking'] = {
-                    'client_name': booking[0],
-                    'client_phone': booking[1] or '',
-                    'client_email': booking[2] or '',
-                    'status': booking[3],
-                    'call_status': booking[4] or 'pending',
-                    'call_comment': booking[5] or '',
-                    'zoom_link': booking[6] or '',
-                    'manager_name': mgr[0] if mgr else '',
+                    'client_name': r[9],
+                    'client_phone': r[10] or '',
+                    'client_email': r[11] or '',
+                    'status': r[12],
+                    'call_status': r[13] or 'pending',
+                    'call_comment': r[14] or '',
+                    'zoom_link': r[15] or '',
+                    'manager_name': r[16] or '',
                 }
             result.append(slot_dict)
         conn.close()
@@ -82,18 +84,22 @@ def handler(event: dict, context) -> dict:
 
     # GET ?action=free — свободные слоты для менеджера
     if method == 'GET' and action == 'free':
-        cur.execute("SELECT id, expert_id, date, start_time, end_time, status FROM slots WHERE status = 'free' ORDER BY date, start_time")
-        slots = cur.fetchall()
+        cur.execute("""
+            SELECT s.id, s.expert_id, s.date, s.start_time, s.end_time, s.status,
+                   e.name, e.portfolio_url
+            FROM slots s
+            JOIN users e ON e.id = s.expert_id AND e.is_active = 1
+            WHERE s.status = 'free'
+            ORDER BY s.date, s.start_time
+        """)
+        rows = cur.fetchall()
         result = []
-        for s in slots:
-            cur.execute("SELECT name, portfolio_url FROM users WHERE id = %s AND is_active = 1", (s[1],))
-            expert = cur.fetchone()
-            if not expert:
-                continue
-            slot_dict = row_to_slot(s)
-            slot_dict['expert_name'] = expert[0]
-            slot_dict['expert_portfolio'] = expert[1] or ''
-            result.append(slot_dict)
+        for r in rows:
+            result.append({
+                'id': r[0], 'expert_id': r[1], 'date': r[2],
+                'start_time': r[3], 'end_time': r[4], 'status': r[5],
+                'expert_name': r[6], 'expert_portfolio': r[7] or '',
+            })
         conn.close()
         return resp(200, result)
 
