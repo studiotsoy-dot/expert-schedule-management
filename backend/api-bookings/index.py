@@ -176,6 +176,7 @@ def handler(event: dict, context) -> dict:
                 end_time=end_time,
                 manager_name=manager_name,
                 zoom_link=zoom_link,
+                client_comment=client_comment,
             )
         except Exception as e:
             print(f"Email error (expert new booking): {e}")

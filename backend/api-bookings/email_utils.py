@@ -127,12 +127,13 @@ def send_status_changed(to_email: str, client_name: str, expert_name: str,
 def send_expert_new_booking(to_email: str, expert_name: str, client_name: str,
                              client_phone: str, client_email: str,
                              date: str, start_time: str, end_time: str,
-                             manager_name: str, zoom_link: str):
+                             manager_name: str, zoom_link: str, client_comment: str = ''):
     """Письмо эксперту при новой записи клиента к нему."""
     if not to_email:
         return
     phone_row = f'<div class="row"><span class="label">Телефон:</span><span class="value">{client_phone}</span></div>' if client_phone else ''
     email_row = f'<div class="row"><span class="label">Email:</span><span class="value">{client_email}</span></div>' if client_email else ''
+    comment_block = f'<hr class="divider"><div style="font-size:13px;color:#64748b;margin-bottom:6px;font-weight:600;">📝 Комментарий менеджера о клиенте:</div><div class="comment-box">{client_comment}</div>' if client_comment else ''
     content = f"""
     <h2>Новая запись клиента!</h2>
     <p style="color:#475569;font-size:14px;margin-bottom:20px">Здравствуйте, {expert_name}! К вам записался новый клиент.</p>
@@ -143,6 +144,7 @@ def send_expert_new_booking(to_email: str, expert_name: str, client_name: str,
     <div class="row"><span class="label">Дата:</span><span class="value">{date}</span></div>
     <div class="row"><span class="label">Время:</span><span class="value">{start_time} – {end_time}</span></div>
     <div class="row"><span class="label">Менеджер:</span><span class="value">{manager_name}</span></div>
+    {comment_block}
     <div class="badge" style="background:#d97706">⏳ Ожидает подтверждения</div>
     <br>
     <a href="{zoom_link}" class="btn btn-teal">🔗 Открыть Zoom</a>
