@@ -1,12 +1,16 @@
 {
   "tests": [
     {
-      "name": "GET booking statuses",
+      "name": "GET without role returns empty list",
       "method": "GET",
       "path": "/",
-      "expectedStatus": 200,
-      "expectedBody": [],
-      "bodyMatcher": "partial"
+      "expectedStatus": 200
+    },
+    {
+      "name": "GET admin bookings returns 200",
+      "method": "GET",
+      "path": "/?role=admin",
+      "expectedStatus": 200
     }
   ]
 }

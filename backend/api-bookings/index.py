@@ -49,37 +49,42 @@ def generate_zoom_link():
     return f"https://zoom.us/j/{str(uuid.uuid4())[:8]}"
 
 
-def enrich_bookings(cur, bookings_rows):
-    """Обогащает записи данными слота, эксперта и менеджера."""
+def fetch_bookings_enriched(cur, where_sql, params=()):
+    """Возвращает бронирования с данными слота, эксперта и менеджера одним JOIN-запросом."""
+    cur.execute(f"""
+        SELECT
+            b.id, b.slot_id, b.manager_id,
+            b.client_name, b.client_phone, b.client_email,
+            b.status, b.call_status, b.call_comment, b.zoom_link, b.created_at,
+            s.date, s.start_time, s.end_time, s.expert_id,
+            e.name, e.portfolio_url,
+            m.name
+        FROM bookings b
+        JOIN slots s ON s.id = b.slot_id
+        JOIN users e ON e.id = s.expert_id
+        LEFT JOIN users m ON m.id = b.manager_id
+        {where_sql}
+    """, params)
+    rows = cur.fetchall()
     result = []
-    for b in bookings_rows:
-        booking_id, slot_id, manager_id, client_name, client_phone, client_email, status, call_status, call_comment, zoom_link, created_at = b
-        cur.execute("SELECT date, start_time, end_time, expert_id FROM slots WHERE id = %s", (slot_id,))
-        slot = cur.fetchone()
-        if not slot:
-            continue
-        date, start_time, end_time, expert_id = slot
-        cur.execute("SELECT name, portfolio_url FROM users WHERE id = %s", (expert_id,))
-        expert = cur.fetchone()
-        cur.execute("SELECT name FROM users WHERE id = %s", (manager_id,))
-        manager = cur.fetchone()
+    for r in rows:
         result.append({
-            'id': booking_id,
-            'client_name': client_name,
-            'client_phone': client_phone or '',
-            'client_email': client_email or '',
-            'status': status,
-            'call_status': call_status or 'pending',
-            'call_comment': call_comment or '',
-            'zoom_link': zoom_link or '',
-            'created_at': created_at or '',
-            'date': date,
-            'start_time': start_time,
-            'end_time': end_time,
-            'expert_id': expert_id,
-            'expert_name': expert[0] if expert else '',
-            'expert_portfolio': (expert[1] or '') if expert else '',
-            'manager_name': manager[0] if manager else '',
+            'id': r[0],
+            'client_name': r[3],
+            'client_phone': r[4] or '',
+            'client_email': r[5] or '',
+            'status': r[6],
+            'call_status': r[7] or 'pending',
+            'call_comment': r[8] or '',
+            'zoom_link': r[9] or '',
+            'created_at': r[10] or '',
+            'date': r[11],
+            'start_time': r[12],
+            'end_time': r[13],
+            'expert_id': r[14],
+            'expert_name': r[15] or '',
+            'expert_portfolio': r[16] or '',
+            'manager_name': r[17] or '',
         })
     return result
 
@@ -107,24 +112,15 @@ def handler(event: dict, context) -> dict:
             return resp(200, [])
         role = params.get('role', '')
         user_id = params.get('user_id', '')
-        cols = "id, slot_id, manager_id, client_name, client_phone, client_email, status, call_status, call_comment, zoom_link, created_at"
         if role == 'admin':
-            cur.execute(f"SELECT {cols} FROM bookings")
+            result = fetch_bookings_enriched(cur, '')
         elif role == 'manager':
-            cur.execute(f"SELECT {cols} FROM bookings WHERE manager_id = %s", (user_id,))
+            result = fetch_bookings_enriched(cur, 'WHERE b.manager_id = %s', (user_id,))
         elif role == 'expert':
-            cur.execute("SELECT id FROM slots WHERE expert_id = %s", (user_id,))
-            slot_ids = [r[0] for r in cur.fetchall()]
-            if not slot_ids:
-                conn.close()
-                return resp(200, [])
-            placeholders = ','.join(['%s'] * len(slot_ids))
-            cur.execute(f"SELECT {cols} FROM bookings WHERE slot_id IN ({placeholders})", slot_ids)
+            result = fetch_bookings_enriched(cur, 'WHERE s.expert_id = %s', (user_id,))
         else:
             conn.close()
             return resp(400, {'detail': 'Укажите role'})
-        rows = cur.fetchall()
-        result = enrich_bookings(cur, rows)
         conn.close()
         return resp(200, result)
 
