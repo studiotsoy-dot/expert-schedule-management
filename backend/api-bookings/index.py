@@ -163,20 +163,7 @@ def handler(event: dict, context) -> dict:
         conn.commit()
         conn.close()
 
-        # Отправляем emails (после коммита, ошибка письма не ломает ответ)
-        try:
-            send_booking_created(
-                to_email=client_email,
-                client_name=client_name,
-                expert_name=expert_name,
-                date=date,
-                start_time=start_time,
-                end_time=end_time,
-                zoom_link=zoom_link,
-            )
-        except Exception as e:
-            print(f"Email error (client booking created): {e}")
-
+        # Клиенту при создании записи письмо НЕ отправляем — только при подтверждении/отмене/переносе
         try:
             send_expert_new_booking(
                 to_email=expert_email,
@@ -274,19 +261,22 @@ def handler(event: dict, context) -> dict:
         e_row = cur.fetchone()
         conn.close()
 
-        try:
-            send_status_changed(
-                to_email=b_row[0],
-                client_name=b_row[1],
-                expert_name=e_row[0] if e_row else '',
-                date=s_row[0],
-                start_time=s_row[1],
-                new_status=new_status,
-                comment=comment,
-                zoom_link=b_row[2],
-            )
-        except Exception as e:
-            print(f"Email error (update-status): {e}")
+        # Клиенту отправляем только при подтверждении или отмене
+        CLIENT_NOTIFY_STATUSES = ('confirmed', 'cancelled_by_client', 'cancelled_by_expert')
+        if new_status in CLIENT_NOTIFY_STATUSES:
+            try:
+                send_status_changed(
+                    to_email=b_row[0],
+                    client_name=b_row[1],
+                    expert_name=e_row[0] if e_row else '',
+                    date=s_row[0],
+                    start_time=s_row[1],
+                    new_status=new_status,
+                    comment=comment,
+                    zoom_link=b_row[2],
+                )
+            except Exception as e:
+                print(f"Email error (update-status): {e}")
 
         return resp(200, {'status': new_status, 'comment': comment})
 

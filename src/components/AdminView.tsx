@@ -3,6 +3,7 @@ import * as XLSX from 'xlsx';
 import Icon from '@/components/ui/icon';
 import StatusBadge from './StatusBadge';
 import CommentCell from './CommentCell';
+import ClientCommentCell from './ClientCommentCell';
 import { User, Slot, Booking } from '@/types';
 import { apiUsers, apiSlots, apiBookings } from '@/lib/api';
 
@@ -183,10 +184,10 @@ export default function AdminView({ user }: Props) {
               <thead><tr>
                 <th>Эксперт</th><th>Дата</th><th>Время</th><th>Статус</th>
                 <th>Клиент</th><th>Телефон</th><th>Email</th>
-                <th>Статус созвона</th><th>Комментарий</th><th>Менеджер</th><th>Zoom</th>
+                <th>О клиенте</th><th>Статус созвона</th><th>Комментарий</th><th>Менеджер</th><th>Zoom</th>
               </tr></thead>
               <tbody>
-                {filteredSlots.length === 0 && <tr><td colSpan={11} className="text-slate-500 text-center py-8">Нет слотов</td></tr>}
+                {filteredSlots.length === 0 && <tr><td colSpan={12} className="text-slate-500 text-center py-8">Нет слотов</td></tr>}
                 {filteredSlots.map(slot => (
                   <tr key={slot.id}>
                     <td>
@@ -203,13 +204,23 @@ export default function AdminView({ user }: Props) {
                         <td>{slot.booking.client_name}</td>
                         <td className="text-slate-400">{slot.booking.client_phone || '—'}</td>
                         <td className="text-slate-400">{slot.booking.client_email || '—'}</td>
+                        <td>
+                          <ClientCommentCell
+                            text={slot.booking.client_comment || ''}
+                            clientName={slot.booking.client_name}
+                            clientPhone={slot.booking.client_phone}
+                            clientEmail={slot.booking.client_email}
+                            date={slot.booking.date}
+                            startTime={slot.booking.start_time}
+                          />
+                        </td>
                         <td><StatusBadge status={slot.booking.call_status} /></td>
                         <td><CommentCell text={slot.booking.call_comment || '—'} /></td>
                         <td className="text-slate-400">{slot.booking.manager_name || '—'}</td>
                         <td>{slot.booking.zoom_link ? <a href={slot.booking.zoom_link} target="_blank" rel="noreferrer" className="text-sky-400 hover:underline text-xs">🔗 Zoom</a> : '—'}</td>
                       </>
                     ) : (
-                      <td colSpan={7} className="text-slate-600 text-center text-xs">— свободен —</td>
+                      <td colSpan={8} className="text-slate-600 text-center text-xs">— свободен —</td>
                     )}
                   </tr>
                 ))}
@@ -225,10 +236,10 @@ export default function AdminView({ user }: Props) {
           <table className="data-table">
             <thead><tr>
               <th>Клиент</th><th>Email</th><th>Телефон</th><th>Эксперт</th>
-              <th>Дата/Время</th><th>Менеджер</th><th>Статус</th><th>Комментарий</th><th>Zoom</th>
+              <th>Дата/Время</th><th>Менеджер</th><th>О клиенте</th><th>Статус</th><th>Комментарий</th><th>Zoom</th>
             </tr></thead>
             <tbody>
-              {bookings.length === 0 && <tr><td colSpan={9} className="text-slate-500 text-center py-8">Нет записей</td></tr>}
+              {bookings.length === 0 && <tr><td colSpan={10} className="text-slate-500 text-center py-8">Нет записей</td></tr>}
               {bookings.map(b => (
                 <tr key={b.id}>
                   <td><strong>{b.client_name}</strong></td>
@@ -241,6 +252,16 @@ export default function AdminView({ user }: Props) {
                   </td>
                   <td className="whitespace-nowrap">{b.date} {b.start_time}</td>
                   <td className="text-slate-400">{b.manager_name || '—'}</td>
+                  <td>
+                    <ClientCommentCell
+                      text={b.client_comment || ''}
+                      clientName={b.client_name}
+                      clientPhone={b.client_phone}
+                      clientEmail={b.client_email}
+                      date={b.date}
+                      startTime={b.start_time}
+                    />
+                  </td>
                   <td><StatusBadge status={b.call_status} /></td>
                   <td><CommentCell text={b.call_comment || '—'} /></td>
                   <td>{b.zoom_link ? <a href={b.zoom_link} target="_blank" rel="noreferrer" className="text-sky-400 hover:underline text-xs">🔗 Zoom</a> : '—'}</td>

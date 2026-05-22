@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Icon from '@/components/ui/icon';
 import StatusBadge from './StatusBadge';
 import StatusModal from './StatusModal';
+import ClientCommentCell from './ClientCommentCell';
 import { User, Slot, Booking, CallStatus } from '@/types';
 import { apiSlots, apiBookings } from '@/lib/api';
 
@@ -178,30 +179,15 @@ export default function ExpertView({ user }: Props) {
                   <td className="whitespace-nowrap">{b.date} {b.start_time}</td>
                   <td className="text-slate-400">{b.manager_name || '—'}</td>
                   <td><StatusBadge status={b.call_status} /></td>
-                  <td className="max-w-[180px]">
-                    {b.client_comment ? (
-                      <div className="flex items-start gap-2">
-                        <span className="text-slate-300 text-xs line-clamp-2">{b.client_comment}</span>
-                        <button
-                          title="Скачать комментарий"
-                          className="shrink-0 text-teal-400 hover:text-teal-300"
-                          onClick={() => {
-                            const blob = new Blob(
-                              [`Клиент: ${b.client_name}\nТелефон: ${b.client_phone || '—'}\nEmail: ${b.client_email || '—'}\nДата: ${b.date} ${b.start_time}\n\nКомментарий менеджера:\n${b.client_comment}`],
-                              { type: 'text/plain;charset=utf-8' }
-                            );
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = `client_${b.client_name.replace(/\s+/g, '_')}.txt`;
-                            a.click();
-                            URL.revokeObjectURL(url);
-                          }}
-                        >
-                          <Icon name="Download" size={14} />
-                        </button>
-                      </div>
-                    ) : <span className="text-slate-600">—</span>}
+                  <td>
+                    <ClientCommentCell
+                      text={b.client_comment || ''}
+                      clientName={b.client_name}
+                      clientPhone={b.client_phone}
+                      clientEmail={b.client_email}
+                      date={b.date}
+                      startTime={b.start_time}
+                    />
                   </td>
                   <td className="text-slate-400 max-w-[140px] truncate">{b.call_comment || '—'}</td>
                   <td>
