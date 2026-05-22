@@ -110,7 +110,8 @@ export default function AdminView({ user }: Props) {
       'Менеджер': b.manager_name || '',
       'Статус записи': STATUS_MAP[b.status] || b.status,
       'Статус созвона': STATUS_MAP[b.call_status] || b.call_status,
-      'Комментарий': b.call_comment || '',
+      'О клиенте (менеджер)': b.client_comment || '',
+      'Комментарий эксперта': b.call_comment || '',
       'Zoom': b.zoom_link || '',
     }));
 
