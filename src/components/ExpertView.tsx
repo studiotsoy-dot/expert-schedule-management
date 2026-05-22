@@ -166,10 +166,10 @@ export default function ExpertView({ user }: Props) {
           <table className="data-table">
             <thead><tr>
               <th>Клиент</th><th>Телефон</th><th>Email</th><th>Дата/Время</th>
-              <th>Менеджер</th><th>Статус</th><th>Комментарий</th><th>Изменить статус</th>
+              <th>Менеджер</th><th>Статус</th><th>О клиенте</th><th>Комментарий</th><th>Изменить статус</th>
             </tr></thead>
             <tbody>
-              {bookings.length === 0 && <tr><td colSpan={8} className="text-slate-500 text-center py-8">Нет записей</td></tr>}
+              {bookings.length === 0 && <tr><td colSpan={9} className="text-slate-500 text-center py-8">Нет записей</td></tr>}
               {bookings.map(b => (
                 <tr key={b.id}>
                   <td><strong>{b.client_name}</strong></td>
@@ -178,6 +178,31 @@ export default function ExpertView({ user }: Props) {
                   <td className="whitespace-nowrap">{b.date} {b.start_time}</td>
                   <td className="text-slate-400">{b.manager_name || '—'}</td>
                   <td><StatusBadge status={b.call_status} /></td>
+                  <td className="max-w-[180px]">
+                    {b.client_comment ? (
+                      <div className="flex items-start gap-2">
+                        <span className="text-slate-300 text-xs line-clamp-2">{b.client_comment}</span>
+                        <button
+                          title="Скачать комментарий"
+                          className="shrink-0 text-teal-400 hover:text-teal-300"
+                          onClick={() => {
+                            const blob = new Blob(
+                              [`Клиент: ${b.client_name}\nТелефон: ${b.client_phone || '—'}\nEmail: ${b.client_email || '—'}\nДата: ${b.date} ${b.start_time}\n\nКомментарий менеджера:\n${b.client_comment}`],
+                              { type: 'text/plain;charset=utf-8' }
+                            );
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `client_${b.client_name.replace(/\s+/g, '_')}.txt`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                          }}
+                        >
+                          <Icon name="Download" size={14} />
+                        </button>
+                      </div>
+                    ) : <span className="text-slate-600">—</span>}
+                  </td>
                   <td className="text-slate-400 max-w-[140px] truncate">{b.call_comment || '—'}</td>
                   <td>
                     <select

@@ -51,6 +51,7 @@ export interface Booking {
   zoom_link?: string;
   call_status: CallStatus;
   call_comment?: string;
+  client_comment?: string;
 }
 
 export const STATUS_LABELS: Record<string, string> = {

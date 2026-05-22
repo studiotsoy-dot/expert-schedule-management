@@ -23,6 +23,7 @@ export default function ManagerView({ user }: Props) {
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
   const [clientEmail, setClientEmail] = useState('');
+  const [clientComment, setClientComment] = useState('');
   const [bookLoading, setBookLoading] = useState(false);
 
   const [rescheduleModal, setRescheduleModal] = useState<{ bookingId: string } | null>(null);
@@ -64,11 +65,12 @@ export default function ManagerView({ user }: Props) {
           client_name: clientName,
           client_phone: clientPhone,
           client_email: clientEmail,
+          client_comment: clientComment,
         }),
       });
       if (res.ok) {
         setBookModal(null);
-        setClientName(''); setClientPhone(''); setClientEmail('');
+        setClientName(''); setClientPhone(''); setClientEmail(''); setClientComment('');
         load();
       } else {
         alert('Ошибка записи. Возможно, слот уже занят.');
@@ -240,6 +242,16 @@ export default function ManagerView({ user }: Props) {
               <input className="form-input w-full" placeholder="ФИО клиента *" value={clientName} onChange={e => setClientName(e.target.value)} />
               <input className="form-input w-full" placeholder="Телефон" value={clientPhone} onChange={e => setClientPhone(e.target.value)} />
               <input type="email" className="form-input w-full" placeholder="Email клиента" value={clientEmail} onChange={e => setClientEmail(e.target.value)} />
+              <div>
+                <label className="text-xs text-slate-500 block mb-1">Комментарий о клиенте для эксперта</label>
+                <textarea
+                  className="form-input w-full resize-none"
+                  rows={3}
+                  placeholder="Кратко опишите запрос клиента, его ситуацию или пожелания..."
+                  value={clientComment}
+                  onChange={e => setClientComment(e.target.value)}
+                />
+              </div>
             </div>
             <div className="flex gap-3 justify-end">
               <button className="btn-primary btn-secondary" onClick={() => setBookModal(null)}>Отмена</button>
