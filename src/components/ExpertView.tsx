@@ -3,6 +3,7 @@ import Icon from '@/components/ui/icon';
 import StatusBadge from './StatusBadge';
 import StatusModal from './StatusModal';
 import ClientCommentCell from './ClientCommentCell';
+import CommentCell from './CommentCell';
 import { User, Slot, Booking, CallStatus } from '@/types';
 import { apiSlots, apiBookings } from '@/lib/api';
 
@@ -189,7 +190,7 @@ export default function ExpertView({ user }: Props) {
                       startTime={b.start_time}
                     />
                   </td>
-                  <td className="text-slate-400 max-w-[140px] truncate">{b.call_comment || '—'}</td>
+                  <td><CommentCell text={b.call_comment || '—'} /></td>
                   <td>
                     <select
                       className="form-input text-xs py-1"
