@@ -93,6 +93,20 @@ export default function AdminView({ user }: Props) {
     else { const e = await res.json(); alert(e.detail || 'Ошибка'); }
   };
 
+  const deleteSlot = async (slotId: string) => {
+    if (!confirm('Удалить слот? Если есть запись клиента — она тоже будет удалена.')) return;
+    const res = await apiSlots(`/api/slots?slot_id=${slotId}&admin=true`, { method: 'DELETE' });
+    if (res.ok) loadAll();
+    else { const e = await res.json(); alert(e.detail || 'Ошибка'); }
+  };
+
+  const deleteBooking = async (bookingId: string) => {
+    if (!confirm('Удалить запись клиента? Слот станет свободным.')) return;
+    const res = await apiBookings(`/api/bookings?booking_id=${bookingId}`, { method: 'DELETE' });
+    if (res.ok) loadAll();
+    else { const e = await res.json(); alert(e.detail || 'Ошибка'); }
+  };
+
   const exportToExcel = () => {
     const STATUS_MAP: Record<string, string> = {
       free: 'Свободен', booked: 'Забронирован', confirmed: 'Подтверждён',
@@ -185,10 +199,10 @@ export default function AdminView({ user }: Props) {
               <thead className="sticky top-0 z-10"><tr>
                 <th>Эксперт</th><th>Дата</th><th>Время</th><th>Статус</th>
                 <th>Клиент</th><th>Телефон</th><th>Email</th>
-                <th>О клиенте</th><th>Статус созвона</th><th>Комментарий</th><th>Менеджер</th><th>Zoom</th>
+                <th>О клиенте</th><th>Статус созвона</th><th>Комментарий</th><th>Менеджер</th><th>Zoom</th><th></th>
               </tr></thead>
               <tbody>
-                {filteredSlots.length === 0 && <tr><td colSpan={12} className="text-slate-500 text-center py-8">Нет слотов</td></tr>}
+                {filteredSlots.length === 0 && <tr><td colSpan={13} className="text-slate-500 text-center py-8">Нет слотов</td></tr>}
                 {filteredSlots.map(slot => (
                   <tr key={slot.id}>
                     <td>
@@ -223,6 +237,9 @@ export default function AdminView({ user }: Props) {
                     ) : (
                       <td colSpan={8} className="text-slate-600 text-center text-xs">— свободен —</td>
                     )}
+                    <td>
+                      <button className="btn-primary btn-danger text-xs py-1 px-2" onClick={() => deleteSlot(slot.id)}>🗑</button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -237,10 +254,10 @@ export default function AdminView({ user }: Props) {
           <table className="data-table">
             <thead className="sticky top-0 z-10"><tr>
               <th>Клиент</th><th>Email</th><th>Телефон</th><th>Эксперт</th>
-              <th>Дата/Время</th><th>Менеджер</th><th>О клиенте</th><th>Статус</th><th>Комментарий</th><th>Zoom</th>
+              <th>Дата/Время</th><th>Менеджер</th><th>О клиенте</th><th>Статус</th><th>Комментарий</th><th>Zoom</th><th></th>
             </tr></thead>
             <tbody>
-              {bookings.length === 0 && <tr><td colSpan={10} className="text-slate-500 text-center py-8">Нет записей</td></tr>}
+              {bookings.length === 0 && <tr><td colSpan={11} className="text-slate-500 text-center py-8">Нет записей</td></tr>}
               {bookings.map(b => (
                 <tr key={b.id}>
                   <td><strong>{b.client_name}</strong></td>
@@ -266,6 +283,9 @@ export default function AdminView({ user }: Props) {
                   <td><StatusBadge status={b.call_status} /></td>
                   <td><CommentCell text={b.call_comment || '—'} /></td>
                   <td>{b.zoom_link ? <a href={b.zoom_link} target="_blank" rel="noreferrer" className="text-sky-400 hover:underline text-xs">🔗 Zoom</a> : '—'}</td>
+                  <td>
+                    <button className="btn-primary btn-danger text-xs py-1 px-2" onClick={() => deleteBooking(b.id)}>🗑</button>
+                  </td>
                 </tr>
               ))}
             </tbody>

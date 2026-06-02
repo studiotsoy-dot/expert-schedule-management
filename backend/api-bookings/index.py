@@ -346,5 +346,23 @@ def handler(event: dict, context) -> dict:
 
         return resp(200, {'new_slot_id': new_slot_id, 'date': new_date, 'start_time': new_start})
 
+    # DELETE ?booking_id=... — удалить бронирование (только для админа)
+    if method == 'DELETE':
+        booking_id = params.get('booking_id')
+        if not booking_id:
+            conn.close()
+            return resp(400, {'detail': 'booking_id обязателен'})
+        cur.execute("SELECT slot_id FROM bookings WHERE id = %s", (booking_id,))
+        row = cur.fetchone()
+        if not row:
+            conn.close()
+            return resp(404, {'detail': 'Бронирование не найдено'})
+        slot_id = row[0]
+        cur.execute("DELETE FROM bookings WHERE id = %s", (booking_id,))
+        cur.execute("UPDATE slots SET status = 'free' WHERE id = %s", (slot_id,))
+        conn.commit()
+        conn.close()
+        return resp(200, {'status': 'deleted'})
+
     conn.close()
     return resp(405, {'detail': 'Method not allowed'})

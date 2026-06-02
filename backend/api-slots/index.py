@@ -155,10 +155,11 @@ def handler(event: dict, context) -> dict:
         conn.close()
         return resp(200, row_to_slot(row))
 
-    # DELETE ?slot_id=...&expert_id=...
+    # DELETE ?slot_id=...&expert_id=...  (admin=true — без ограничений)
     if method == 'DELETE':
         slot_id = params.get('slot_id')
         expert_id = params.get('expert_id', '')
+        is_admin = params.get('admin') == 'true'
         if not slot_id:
             conn.close()
             return resp(400, {'detail': 'slot_id обязателен'})
@@ -167,12 +168,15 @@ def handler(event: dict, context) -> dict:
         if not existing:
             conn.close()
             return resp(404, {'detail': 'Слот не найден'})
-        if existing[0] != expert_id:
-            conn.close()
-            return resp(403, {'detail': 'Нет прав'})
-        if existing[1] != 'free':
-            conn.close()
-            return resp(400, {'detail': 'Нельзя удалить занятый слот'})
+        if not is_admin:
+            if existing[0] != expert_id:
+                conn.close()
+                return resp(403, {'detail': 'Нет прав'})
+            if existing[1] != 'free':
+                conn.close()
+                return resp(400, {'detail': 'Нельзя удалить занятый слот'})
+        # Удаляем связанное бронирование (если есть), затем слот
+        cur.execute("DELETE FROM bookings WHERE slot_id = %s", (slot_id,))
         cur.execute("DELETE FROM slots WHERE id = %s", (slot_id,))
         conn.commit()
         conn.close()
