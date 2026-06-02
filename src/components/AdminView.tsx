@@ -122,7 +122,6 @@ export default function AdminView({ user }: Props) {
       'Дата': b.date || '',
       'Время': b.start_time ? `${b.start_time} — ${b.end_time}` : '',
       'Менеджер': b.manager_name || '',
-      'Статус записи': STATUS_MAP[b.status] || b.status,
       'Статус созвона': STATUS_MAP[b.call_status] || b.call_status,
       'О клиенте (менеджер)': b.client_comment || '',
       'Комментарий эксперта': b.call_comment || '',
