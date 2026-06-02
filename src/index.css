@@ -151,7 +151,7 @@
   .data-table th {
     text-align: left;
     padding: 0.65rem 0.6rem;
-    background: rgba(255, 255, 255, 0.05);
+    background: #1a2236;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     font-weight: 600;
     color: #94a3b8;

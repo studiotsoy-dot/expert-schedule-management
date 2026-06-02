@@ -180,9 +180,9 @@ export default function AdminView({ user }: Props) {
               {experts.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
             </select>
           </div>
-          <div className="overflow-x-auto rounded-xl border border-white/5">
+          <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-280px)] rounded-xl border border-white/5">
             <table className="data-table">
-              <thead><tr>
+              <thead className="sticky top-0 z-10"><tr>
                 <th>Эксперт</th><th>Дата</th><th>Время</th><th>Статус</th>
                 <th>Клиент</th><th>Телефон</th><th>Email</th>
                 <th>О клиенте</th><th>Статус созвона</th><th>Комментарий</th><th>Менеджер</th><th>Zoom</th>
@@ -233,9 +233,9 @@ export default function AdminView({ user }: Props) {
 
       {/* BOOKINGS */}
       {!loading && tab === 'bookings' && (
-        <div className="overflow-x-auto rounded-xl border border-white/5">
+        <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-260px)] rounded-xl border border-white/5">
           <table className="data-table">
-            <thead><tr>
+            <thead className="sticky top-0 z-10"><tr>
               <th>Клиент</th><th>Email</th><th>Телефон</th><th>Эксперт</th>
               <th>Дата/Время</th><th>Менеджер</th><th>О клиенте</th><th>Статус</th><th>Комментарий</th><th>Zoom</th>
             </tr></thead>
@@ -276,9 +276,9 @@ export default function AdminView({ user }: Props) {
       {/* USERS */}
       {!loading && tab === 'users' && (
         <>
-          <div className="overflow-x-auto rounded-xl border border-white/5">
+          <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-260px)] rounded-xl border border-white/5">
             <table className="data-table">
-              <thead><tr>
+              <thead className="sticky top-0 z-10"><tr>
                 <th>Имя</th><th>Email</th><th>Роль</th><th>Статус</th><th>Визитка (URL)</th><th>Действия</th><th>Удалить</th>
               </tr></thead>
               <tbody>

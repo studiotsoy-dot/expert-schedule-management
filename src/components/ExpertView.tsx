@@ -137,9 +137,9 @@ export default function ExpertView({ user }: Props) {
             </div>
           </div>
 
-          <div className="overflow-x-auto rounded-xl border border-white/5">
+          <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-260px)] rounded-xl border border-white/5">
             <table className="data-table">
-              <thead><tr><th>Дата</th><th>Время</th><th>Статус</th><th>Действия</th></tr></thead>
+              <thead className="sticky top-0 z-10"><tr><th>Дата</th><th>Время</th><th>Статус</th><th>Действия</th></tr></thead>
               <tbody>
                 {slots.length === 0 && <tr><td colSpan={4} className="text-slate-500 text-center py-8">Нет слотов</td></tr>}
                 {slots.map(slot => (
@@ -164,9 +164,9 @@ export default function ExpertView({ user }: Props) {
       )}
 
       {!loading && tab === 'bookings' && (
-        <div className="overflow-x-auto rounded-xl border border-white/5">
+        <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-260px)] rounded-xl border border-white/5">
           <table className="data-table">
-            <thead><tr>
+            <thead className="sticky top-0 z-10"><tr>
               <th>Клиент</th><th>Телефон</th><th>Email</th><th>Дата/Время</th>
               <th>Менеджер</th><th>Статус</th><th>О клиенте</th><th>Комментарий</th><th>Изменить статус</th>
             </tr></thead>

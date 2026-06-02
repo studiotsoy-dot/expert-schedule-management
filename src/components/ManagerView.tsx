@@ -123,9 +123,9 @@ export default function ManagerView({ user }: Props) {
           {freeSlots.length === 0 ? (
             <div className="text-slate-500 text-center py-10">Нет свободных слотов</div>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-white/5">
+            <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-260px)] rounded-xl border border-white/5">
               <table className="data-table">
-                <thead><tr><th>Эксперт</th><th>Дата</th><th>Время</th><th></th></tr></thead>
+                <thead className="sticky top-0 z-10"><tr><th>Эксперт</th><th>Дата</th><th>Время</th><th></th></tr></thead>
                 <tbody>
                   {freeSlots.map(slot => (
                     <tr key={slot.id}>
@@ -156,9 +156,9 @@ export default function ManagerView({ user }: Props) {
           {bookings.length === 0 ? (
             <div className="text-slate-500 text-center py-10">Нет записей</div>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-white/5">
+            <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-260px)] rounded-xl border border-white/5">
               <table className="data-table">
-                <thead><tr>
+                <thead className="sticky top-0 z-10"><tr>
                   <th>Клиент</th><th>Телефон</th><th>Email</th><th>Эксперт</th>
                   <th>Дата/Время</th><th>Статус</th><th>Комментарий</th><th>Zoom</th><th></th>
                 </tr></thead>
