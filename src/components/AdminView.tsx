@@ -28,6 +28,7 @@ export default function AdminView({ user }: Props) {
   const [expertFilter, setExpertFilter] = useState('all');
   const [editPortfolios, setEditPortfolios] = useState<Record<string, string>>({});
   const [editRoles, setEditRoles] = useState<Record<string, string>>({});
+  const [editEmails, setEditEmails] = useState<Record<string, string>>({});
 
   const fetchAll = async (showLoader = false) => {
     if (showLoader) setLoading(true);
@@ -43,12 +44,15 @@ export default function AdminView({ user }: Props) {
       setUsers(usersArr);
       const portfolioMap: Record<string, string> = {};
       const roleMap: Record<string, string> = {};
+      const emailMap: Record<string, string> = {};
       usersArr.forEach((usr: User) => {
         portfolioMap[usr.id] = usr.portfolio_url || '';
         roleMap[usr.id] = usr.role;
+        emailMap[usr.id] = usr.email || '';
       });
       setEditPortfolios(portfolioMap);
       setEditRoles(roleMap);
+      setEditEmails(emailMap);
     } finally {
       if (showLoader) setLoading(false);
     }
@@ -66,11 +70,15 @@ export default function AdminView({ user }: Props) {
   const updateUser = async (userId: string) => {
     const newRole = editRoles[userId];
     const portfolioUrl = editPortfolios[userId] || '';
+    const newEmail = editEmails[userId] || '';
     if (!confirm(`Сохранить изменения для пользователя?`)) return;
+    const payload: Record<string, string> = { user_id: userId, role: newRole, portfolio_url: portfolioUrl };
+    const originalEmail = users.find(u => u.id === userId)?.email || '';
+    if (newEmail && newEmail !== originalEmail) payload.email = newEmail;
     const res = await apiUsers('/api/users', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: userId, role: newRole, portfolio_url: portfolioUrl }),
+      body: JSON.stringify(payload),
     });
     if (res.ok) { alert('Обновлено!'); loadAll(); }
     else { const e = await res.json(); alert(e.detail || 'Ошибка'); }
@@ -306,7 +314,14 @@ export default function AdminView({ user }: Props) {
                   return (
                     <tr key={u.id}>
                       <td><strong>{escapeHtml(u.name)}</strong></td>
-                      <td className="text-slate-400 text-xs">{escapeHtml(u.email)}</td>
+                      <td>
+                        <input
+                          className="form-input text-xs py-1 w-44"
+                          value={editEmails[u.id] ?? u.email}
+                          onChange={e => setEditEmails(m => ({ ...m, [u.id]: e.target.value }))}
+                          placeholder="email@example.com"
+                        />
+                      </td>
                       <td>
                         <select
                           className="form-input text-xs py-1"

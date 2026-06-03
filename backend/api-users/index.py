@@ -136,6 +136,16 @@ def handler(event: dict, context) -> dict:
             updates.append("is_active = %s"); values.append(1 if body['is_active'] else 0)
         if body.get('portfolio_url') is not None:
             updates.append("portfolio_url = %s"); values.append(body['portfolio_url'])
+        if body.get('email') is not None:
+            new_email = body['email'].strip().lower()
+            if not new_email or '@' not in new_email:
+                conn.close()
+                return resp(400, {'detail': 'Некорректный email'})
+            cur.execute("SELECT id FROM users WHERE email = %s AND id != %s", (new_email, user_id))
+            if cur.fetchone():
+                conn.close()
+                return resp(409, {'detail': 'Этот email уже занят другим пользователем'})
+            updates.append("email = %s"); values.append(new_email)
 
         if not updates:
             conn.close()
