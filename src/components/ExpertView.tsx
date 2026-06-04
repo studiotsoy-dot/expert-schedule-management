@@ -167,16 +167,17 @@ export default function ExpertView({ user }: Props) {
         <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-260px)] rounded-xl border border-white/5">
           <table className="data-table">
             <thead className="sticky top-0 z-10"><tr>
-              <th>Клиент</th><th>Телефон</th><th>Email</th><th>Дата/Время</th>
+              <th>Клиент</th><th>Телефон</th><th>Email</th><th>Telegram</th><th>Дата/Время</th>
               <th>Менеджер</th><th>Статус</th><th>О клиенте</th><th>Комментарий</th><th>Изменить статус</th>
             </tr></thead>
             <tbody>
-              {bookings.length === 0 && <tr><td colSpan={9} className="text-slate-500 text-center py-8">Нет записей</td></tr>}
+              {bookings.length === 0 && <tr><td colSpan={10} className="text-slate-500 text-center py-8">Нет записей</td></tr>}
               {bookings.map(b => (
                 <tr key={b.id}>
                   <td><strong>{b.client_name}</strong></td>
                   <td className="text-slate-400">{b.client_phone || '—'}</td>
                   <td className="text-slate-400">{b.client_email || '—'}</td>
+                  <td className="text-slate-400">{b.client_telegram ? <a href={`https://t.me/${b.client_telegram.replace('@','')}`} target="_blank" rel="noreferrer" className="text-sky-400 hover:underline">{b.client_telegram}</a> : '—'}</td>
                   <td className="whitespace-nowrap">{b.date} {b.start_time}</td>
                   <td className="text-slate-400">{b.manager_name || '—'}</td>
                   <td><StatusBadge status={b.call_status} /></td>
@@ -186,6 +187,7 @@ export default function ExpertView({ user }: Props) {
                       clientName={b.client_name}
                       clientPhone={b.client_phone}
                       clientEmail={b.client_email}
+                      clientTelegram={b.client_telegram}
                       date={b.date}
                       startTime={b.start_time}
                     />

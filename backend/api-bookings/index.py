@@ -58,7 +58,7 @@ def fetch_bookings_enriched(cur, where_sql, params=()):
             b.status, b.call_status, b.call_comment, b.zoom_link, b.created_at,
             s.date, s.start_time, s.end_time, s.expert_id,
             e.name, e.portfolio_url,
-            m.name, b.client_comment
+            m.name, b.client_comment, b.client_telegram
         FROM bookings b
         JOIN slots s ON s.id = b.slot_id
         JOIN users e ON e.id = s.expert_id
@@ -86,6 +86,7 @@ def fetch_bookings_enriched(cur, where_sql, params=()):
             'expert_portfolio': r[16] or '',
             'manager_name': r[17] or '',
             'client_comment': r[18] or '',
+            'client_telegram': r[19] or '',
         })
     return result
 
@@ -154,10 +155,11 @@ def handler(event: dict, context) -> dict:
         client_name = body['client_name']
 
         client_comment = body.get('client_comment', '')
+        client_telegram = body.get('client_telegram', '')
         cur.execute(
-            "INSERT INTO bookings (id, slot_id, manager_id, client_name, client_phone, client_email, status, call_status, call_comment, zoom_link, created_at, client_comment) VALUES (%s,%s,%s,%s,%s,%s,'pending','pending','',%s,%s,%s)",
+            "INSERT INTO bookings (id, slot_id, manager_id, client_name, client_phone, client_email, status, call_status, call_comment, zoom_link, created_at, client_comment, client_telegram) VALUES (%s,%s,%s,%s,%s,%s,'pending','pending','',%s,%s,%s,%s)",
             (booking_id, slot_id, body['manager_id'], client_name,
-             body.get('client_phone', ''), client_email, zoom_link, now, client_comment)
+             body.get('client_phone', ''), client_email, zoom_link, now, client_comment, client_telegram)
         )
         cur.execute("UPDATE slots SET status = 'booked' WHERE id = %s", (slot_id,))
         conn.commit()

@@ -1,0 +1,1 @@
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS client_telegram VARCHAR(255) DEFAULT '';

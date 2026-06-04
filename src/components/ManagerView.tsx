@@ -23,6 +23,7 @@ export default function ManagerView({ user }: Props) {
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
   const [clientEmail, setClientEmail] = useState('');
+  const [clientTelegram, setClientTelegram] = useState('');
   const [clientComment, setClientComment] = useState('');
   const [bookLoading, setBookLoading] = useState(false);
 
@@ -65,12 +66,13 @@ export default function ManagerView({ user }: Props) {
           client_name: clientName,
           client_phone: clientPhone,
           client_email: clientEmail,
+          client_telegram: clientTelegram,
           client_comment: clientComment,
         }),
       });
       if (res.ok) {
         setBookModal(null);
-        setClientName(''); setClientPhone(''); setClientEmail(''); setClientComment('');
+        setClientName(''); setClientPhone(''); setClientEmail(''); setClientTelegram(''); setClientComment('');
         load();
       } else {
         alert('Ошибка записи. Возможно, слот уже занят.');
@@ -159,7 +161,7 @@ export default function ManagerView({ user }: Props) {
             <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-260px)] rounded-xl border border-white/5">
               <table className="data-table">
                 <thead className="sticky top-0 z-10"><tr>
-                  <th>Клиент</th><th>Телефон</th><th>Email</th><th>Эксперт</th>
+                  <th>Клиент</th><th>Телефон</th><th>Email</th><th>Telegram</th><th>Эксперт</th>
                   <th>Дата/Время</th><th>Статус</th><th>Комментарий</th><th>Zoom</th><th></th>
                 </tr></thead>
                 <tbody>
@@ -168,6 +170,7 @@ export default function ManagerView({ user }: Props) {
                       <td><strong>{b.client_name}</strong></td>
                       <td className="text-slate-400">{b.client_phone || '—'}</td>
                       <td className="text-slate-400">{b.client_email || '—'}</td>
+                      <td className="text-slate-400">{b.client_telegram ? <a href={`https://t.me/${b.client_telegram.replace('@','')}`} target="_blank" rel="noreferrer" className="text-sky-400 hover:underline">{b.client_telegram}</a> : '—'}</td>
                       <td>
                         {b.expert_portfolio
                           ? <a href={b.expert_portfolio} target="_blank" rel="noreferrer" className="text-teal-400 hover:underline font-semibold">{b.expert_name}</a>
@@ -242,6 +245,7 @@ export default function ManagerView({ user }: Props) {
               <input className="form-input w-full" placeholder="ФИО клиента *" value={clientName} onChange={e => setClientName(e.target.value)} />
               <input className="form-input w-full" placeholder="Телефон" value={clientPhone} onChange={e => setClientPhone(e.target.value)} />
               <input type="email" className="form-input w-full" placeholder="Email клиента" value={clientEmail} onChange={e => setClientEmail(e.target.value)} />
+              <input className="form-input w-full" placeholder="Telegram (@username)" value={clientTelegram} onChange={e => setClientTelegram(e.target.value)} />
               <div>
                 <label className="text-xs text-slate-500 block mb-1">Комментарий о клиенте для эксперта</label>
                 <textarea

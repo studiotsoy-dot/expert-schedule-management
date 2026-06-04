@@ -126,6 +126,7 @@ export default function AdminView({ user }: Props) {
       'Клиент': b.client_name,
       'Email клиента': b.client_email || '',
       'Телефон клиента': b.client_phone || '',
+      'Telegram': b.client_telegram || '',
       'Эксперт': b.expert_name || '',
       'Дата': b.date || '',
       'Время': b.start_time ? `${b.start_time} — ${b.end_time}` : '',
@@ -205,11 +206,11 @@ export default function AdminView({ user }: Props) {
             <table className="data-table">
               <thead className="sticky top-0 z-10"><tr>
                 <th>Эксперт</th><th>Дата</th><th>Время</th><th>Статус</th>
-                <th>Клиент</th><th>Телефон</th><th>Email</th>
+                <th>Клиент</th><th>Телефон</th><th>Email</th><th>Telegram</th>
                 <th>О клиенте</th><th>Статус созвона</th><th>Комментарий</th><th>Менеджер</th><th>Zoom</th><th></th>
               </tr></thead>
               <tbody>
-                {filteredSlots.length === 0 && <tr><td colSpan={13} className="text-slate-500 text-center py-8">Нет слотов</td></tr>}
+                {filteredSlots.length === 0 && <tr><td colSpan={14} className="text-slate-500 text-center py-8">Нет слотов</td></tr>}
                 {filteredSlots.map(slot => (
                   <tr key={slot.id}>
                     <td>
@@ -226,12 +227,14 @@ export default function AdminView({ user }: Props) {
                         <td>{slot.booking.client_name}</td>
                         <td className="text-slate-400">{slot.booking.client_phone || '—'}</td>
                         <td className="text-slate-400">{slot.booking.client_email || '—'}</td>
+                        <td className="text-slate-400">{slot.booking.client_telegram ? <a href={`https://t.me/${slot.booking.client_telegram.replace('@','')}`} target="_blank" rel="noreferrer" className="text-sky-400 hover:underline">{slot.booking.client_telegram}</a> : '—'}</td>
                         <td>
                           <ClientCommentCell
                             text={slot.booking.client_comment || ''}
                             clientName={slot.booking.client_name}
                             clientPhone={slot.booking.client_phone}
                             clientEmail={slot.booking.client_email}
+                            clientTelegram={slot.booking.client_telegram}
                             date={slot.booking.date}
                             startTime={slot.booking.start_time}
                           />
@@ -242,7 +245,7 @@ export default function AdminView({ user }: Props) {
                         <td>{slot.booking.zoom_link ? <a href={slot.booking.zoom_link} target="_blank" rel="noreferrer" className="text-sky-400 hover:underline text-xs">🔗 Zoom</a> : '—'}</td>
                       </>
                     ) : (
-                      <td colSpan={8} className="text-slate-600 text-center text-xs">— свободен —</td>
+                      <td colSpan={9} className="text-slate-600 text-center text-xs">— свободен —</td>
                     )}
                     <td>
                       <button className="btn-primary btn-danger text-xs py-1 px-2" onClick={() => deleteSlot(slot.id)}>🗑</button>
@@ -260,16 +263,17 @@ export default function AdminView({ user }: Props) {
         <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-260px)] rounded-xl border border-white/5">
           <table className="data-table">
             <thead className="sticky top-0 z-10"><tr>
-              <th>Клиент</th><th>Email</th><th>Телефон</th><th>Эксперт</th>
+              <th>Клиент</th><th>Email</th><th>Телефон</th><th>Telegram</th><th>Эксперт</th>
               <th>Дата/Время</th><th>Менеджер</th><th>О клиенте</th><th>Статус</th><th>Комментарий</th><th>Zoom</th><th></th>
             </tr></thead>
             <tbody>
-              {bookings.length === 0 && <tr><td colSpan={11} className="text-slate-500 text-center py-8">Нет записей</td></tr>}
+              {bookings.length === 0 && <tr><td colSpan={12} className="text-slate-500 text-center py-8">Нет записей</td></tr>}
               {bookings.map(b => (
                 <tr key={b.id}>
                   <td><strong>{b.client_name}</strong></td>
                   <td className="text-slate-400">{b.client_email || '—'}</td>
                   <td className="text-slate-400">{b.client_phone || '—'}</td>
+                  <td className="text-slate-400">{b.client_telegram ? <a href={`https://t.me/${b.client_telegram.replace('@','')}`} target="_blank" rel="noreferrer" className="text-sky-400 hover:underline">{b.client_telegram}</a> : '—'}</td>
                   <td>
                     {b.expert_portfolio
                       ? <a href={b.expert_portfolio} target="_blank" rel="noreferrer" className="text-teal-400 hover:underline">{b.expert_name}</a>
@@ -283,6 +287,7 @@ export default function AdminView({ user }: Props) {
                       clientName={b.client_name}
                       clientPhone={b.client_phone}
                       clientEmail={b.client_email}
+                      clientTelegram={b.client_telegram}
                       date={b.date}
                       startTime={b.start_time}
                     />

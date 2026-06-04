@@ -45,6 +45,7 @@ export interface Booking {
   client_name: string;
   client_phone?: string;
   client_email?: string;
+  client_telegram?: string;
   date: string;
   start_time: string;
   end_time?: string;

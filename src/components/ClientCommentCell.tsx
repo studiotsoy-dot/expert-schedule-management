@@ -6,11 +6,12 @@ interface Props {
   clientName?: string;
   clientPhone?: string;
   clientEmail?: string;
+  clientTelegram?: string;
   date?: string;
   startTime?: string;
 }
 
-export default function ClientCommentCell({ text, clientName = '', clientPhone = '', clientEmail = '', date = '', startTime = '' }: Props) {
+export default function ClientCommentCell({ text, clientName = '', clientPhone = '', clientEmail = '', clientTelegram = '', date = '', startTime = '' }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -28,6 +29,7 @@ export default function ClientCommentCell({ text, clientName = '', clientPhone =
       `Клиент: ${clientName}`,
       `Телефон: ${clientPhone || '—'}`,
       `Email: ${clientEmail || '—'}`,
+      `Telegram: ${clientTelegram || '—'}`,
       `Дата: ${date} ${startTime}`,
       '',
       'Комментарий менеджера:',
