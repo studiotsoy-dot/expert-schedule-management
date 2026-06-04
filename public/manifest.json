@@ -1,0 +1,24 @@
+{
+  "name": "АСМ — Расписание экспертов",
+  "short_name": "АСМ",
+  "description": "Система управления расписанием экспертов АСМ",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "https://cdn.poehali.dev/projects/0522075d-7123-4290-9287-b6858ebf89f0/bucket/f90be55f-7b0e-400b-86a2-fb6b539146fb.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://cdn.poehali.dev/projects/0522075d-7123-4290-9287-b6858ebf89f0/bucket/f90be55f-7b0e-400b-86a2-fb6b539146fb.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
