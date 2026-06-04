@@ -52,7 +52,7 @@ def handler(event: dict, context) -> dict:
                 e.name, e.email, e.portfolio_url,
                 b.client_name, b.client_phone, b.client_email,
                 b.status, b.call_status, b.call_comment, b.zoom_link,
-                m.name
+                m.name, b.client_telegram, b.client_comment
             FROM slots s
             JOIN users e ON e.id = s.expert_id
             LEFT JOIN bookings b ON b.slot_id = s.id
@@ -77,6 +77,8 @@ def handler(event: dict, context) -> dict:
                     'call_comment': r[14] or '',
                     'zoom_link': r[15] or '',
                     'manager_name': r[16] or '',
+                    'client_telegram': r[17] or '',
+                    'client_comment': r[18] or '',
                 }
             result.append(slot_dict)
         conn.close()
