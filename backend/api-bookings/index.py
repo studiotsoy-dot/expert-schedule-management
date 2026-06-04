@@ -348,6 +348,32 @@ def handler(event: dict, context) -> dict:
 
         return resp(200, {'new_slot_id': new_slot_id, 'date': new_date, 'start_time': new_start})
 
+    # PUT — обновление контактных данных клиента (только для админа)
+    if method == 'PUT':
+        body = json.loads(event.get('body') or '{}')
+        booking_id = body.get('booking_id')
+        if not booking_id:
+            conn.close()
+            return resp(400, {'detail': 'booking_id обязателен'})
+        cur.execute("SELECT id FROM bookings WHERE id = %s", (booking_id,))
+        if not cur.fetchone():
+            conn.close()
+            return resp(404, {'detail': 'Бронирование не найдено'})
+        updates = []
+        values = []
+        for field in ('client_name', 'client_phone', 'client_email', 'client_telegram'):
+            if field in body:
+                updates.append(f"{field} = %s")
+                values.append(body[field])
+        if not updates:
+            conn.close()
+            return resp(400, {'detail': 'Нет данных для обновления'})
+        values.append(booking_id)
+        cur.execute(f"UPDATE bookings SET {', '.join(updates)} WHERE id = %s", values)
+        conn.commit()
+        conn.close()
+        return resp(200, {'status': 'updated'})
+
     # DELETE ?booking_id=... — удалить бронирование (только для админа)
     if method == 'DELETE':
         booking_id = params.get('booking_id')

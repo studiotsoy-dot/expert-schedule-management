@@ -29,6 +29,8 @@ export default function AdminView({ user }: Props) {
   const [editPortfolios, setEditPortfolios] = useState<Record<string, string>>({});
   const [editRoles, setEditRoles] = useState<Record<string, string>>({});
   const [editEmails, setEditEmails] = useState<Record<string, string>>({});
+  const [editingBooking, setEditingBooking] = useState<string | null>(null);
+  const [editBookingFields, setEditBookingFields] = useState<Record<string, string>>({});
 
   const fetchAll = async (showLoader = false) => {
     if (showLoader) setLoading(true);
@@ -106,6 +108,26 @@ export default function AdminView({ user }: Props) {
     const res = await apiSlots(`/api/slots?slot_id=${slotId}&admin=true`, { method: 'DELETE' });
     if (res.ok) loadAll();
     else { const e = await res.json(); alert(e.detail || 'Ошибка'); }
+  };
+
+  const startEditBooking = (b: Booking) => {
+    setEditingBooking(b.id);
+    setEditBookingFields({
+      client_name: b.client_name || '',
+      client_phone: b.client_phone || '',
+      client_email: b.client_email || '',
+      client_telegram: b.client_telegram || '',
+    });
+  };
+
+  const saveBookingContacts = async (bookingId: string) => {
+    const res = await apiBookings('/api/bookings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ booking_id: bookingId, ...editBookingFields }),
+    });
+    if (res.ok) { setEditingBooking(null); loadAll(); }
+    else { const e = await res.json(); alert(e.detail || 'Ошибка сохранения'); }
   };
 
   const deleteBooking = async (bookingId: string) => {
@@ -268,38 +290,62 @@ export default function AdminView({ user }: Props) {
             </tr></thead>
             <tbody>
               {bookings.length === 0 && <tr><td colSpan={12} className="text-slate-500 text-center py-8">Нет записей</td></tr>}
-              {bookings.map(b => (
-                <tr key={b.id}>
-                  <td><strong>{b.client_name}</strong></td>
-                  <td className="text-slate-400">{b.client_email || '—'}</td>
-                  <td className="text-slate-400">{b.client_phone || '—'}</td>
-                  <td className="text-slate-400">{b.client_telegram ? <a href={`https://t.me/${b.client_telegram.replace('@','')}`} target="_blank" rel="noreferrer" className="text-sky-400 hover:underline">{b.client_telegram}</a> : '—'}</td>
-                  <td>
-                    {b.expert_portfolio
-                      ? <a href={b.expert_portfolio} target="_blank" rel="noreferrer" className="text-teal-400 hover:underline">{b.expert_name}</a>
-                      : b.expert_name}
-                  </td>
-                  <td className="whitespace-nowrap">{b.date} {b.start_time}</td>
-                  <td className="text-slate-400">{b.manager_name || '—'}</td>
-                  <td>
-                    <ClientCommentCell
-                      text={b.client_comment || ''}
-                      clientName={b.client_name}
-                      clientPhone={b.client_phone}
-                      clientEmail={b.client_email}
-                      clientTelegram={b.client_telegram}
-                      date={b.date}
-                      startTime={b.start_time}
-                    />
-                  </td>
-                  <td><StatusBadge status={b.call_status} /></td>
-                  <td><CommentCell text={b.call_comment || '—'} /></td>
-                  <td>{b.zoom_link ? <a href={b.zoom_link} target="_blank" rel="noreferrer" className="text-sky-400 hover:underline text-xs">🔗 Zoom</a> : '—'}</td>
-                  <td>
-                    <button className="btn-primary btn-danger text-xs py-1 px-2" onClick={() => deleteBooking(b.id)}>🗑</button>
-                  </td>
-                </tr>
-              ))}
+              {bookings.map(b => {
+                const isEditing = editingBooking === b.id;
+                return (
+                  <tr key={b.id}>
+                    {isEditing ? (
+                      <>
+                        <td><input className="form-input text-xs py-1 w-32" value={editBookingFields.client_name} onChange={e => setEditBookingFields(f => ({ ...f, client_name: e.target.value }))} placeholder="ФИО" /></td>
+                        <td><input className="form-input text-xs py-1 w-32" value={editBookingFields.client_email} onChange={e => setEditBookingFields(f => ({ ...f, client_email: e.target.value }))} placeholder="Email" /></td>
+                        <td><input className="form-input text-xs py-1 w-28" value={editBookingFields.client_phone} onChange={e => setEditBookingFields(f => ({ ...f, client_phone: e.target.value }))} placeholder="Телефон" /></td>
+                        <td><input className="form-input text-xs py-1 w-28" value={editBookingFields.client_telegram} onChange={e => setEditBookingFields(f => ({ ...f, client_telegram: e.target.value }))} placeholder="@username" /></td>
+                      </>
+                    ) : (
+                      <>
+                        <td><strong>{b.client_name}</strong></td>
+                        <td className="text-slate-400">{b.client_email || '—'}</td>
+                        <td className="text-slate-400">{b.client_phone || '—'}</td>
+                        <td className="text-slate-400">{b.client_telegram ? <a href={`https://t.me/${b.client_telegram.replace('@','')}`} target="_blank" rel="noreferrer" className="text-sky-400 hover:underline">{b.client_telegram}</a> : '—'}</td>
+                      </>
+                    )}
+                    <td>
+                      {b.expert_portfolio
+                        ? <a href={b.expert_portfolio} target="_blank" rel="noreferrer" className="text-teal-400 hover:underline">{b.expert_name}</a>
+                        : b.expert_name}
+                    </td>
+                    <td className="whitespace-nowrap">{b.date} {b.start_time}</td>
+                    <td className="text-slate-400">{b.manager_name || '—'}</td>
+                    <td>
+                      <ClientCommentCell
+                        text={b.client_comment || ''}
+                        clientName={b.client_name}
+                        clientPhone={b.client_phone}
+                        clientEmail={b.client_email}
+                        clientTelegram={b.client_telegram}
+                        date={b.date}
+                        startTime={b.start_time}
+                      />
+                    </td>
+                    <td><StatusBadge status={b.call_status} /></td>
+                    <td><CommentCell text={b.call_comment || '—'} /></td>
+                    <td>{b.zoom_link ? <a href={b.zoom_link} target="_blank" rel="noreferrer" className="text-sky-400 hover:underline text-xs">🔗 Zoom</a> : '—'}</td>
+                    <td>
+                      <div className="flex gap-1">
+                        {isEditing ? (
+                          <>
+                            <button className="btn-primary btn-success text-xs py-1 px-2" onClick={() => saveBookingContacts(b.id)}>💾</button>
+                            <button className="btn-primary btn-secondary text-xs py-1 px-2" onClick={() => setEditingBooking(null)}>✕</button>
+                          </>
+                        ) : (
+                          <button className="btn-primary btn-secondary text-xs py-1 px-2" title="Редактировать контакты" onClick={() => startEditBooking(b)}>✏️</button>
+                        )}
+                        <button className="btn-primary btn-danger text-xs py-1 px-2" onClick={() => deleteBooking(b.id)}>🗑</button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
