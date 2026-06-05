@@ -1,0 +1,12 @@
+{
+  "tests": [
+    {
+      "name": "GET reminders returns 200",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {"sent_1h": 0, "sent_10m": 0},
+      "bodyMatcher": "partial"
+    }
+  ]
+}

@@ -220,3 +220,43 @@ def send_manager_status_changed(to_email: str, manager_name: str, client_name: s
     <a href="{APP_URL}" class="btn btn-app">🚀 Открыть систему</a>
     """
     _send(to_email, f'Статус записи [{client_name}]: {label}', _base_template(content))
+
+
+def send_reminder(to_email: str, client_name: str, expert_name: str,
+                  date: str, start_time: str, zoom_link: str, minutes_before: int):
+    """Напоминание клиенту о предстоящем созвоне за 1 час или 10 минут."""
+    if not to_email:
+        return
+    if minutes_before == 60:
+        badge_text = '⏰ До созвона 1 час'
+        badge_color = '#d97706'
+        tip = 'У вас есть час, чтобы проверить связь и подготовиться.'
+        checklist = """
+        <hr class="divider">
+        <div style="font-size:13px;color:#64748b;font-weight:600;margin-bottom:8px;">✅ Что проверить заранее:</div>
+        <ul style="font-size:13px;color:#334155;padding-left:20px;margin:0;line-height:2">
+          <li>Откройте Zoom и войдите в аккаунт</li>
+          <li>Проверьте микрофон и камеру</li>
+          <li>Убедитесь в стабильном интернет-соединении</li>
+          <li>Найдите тихое место без посторонних шумов</li>
+        </ul>"""
+    else:
+        badge_text = '🔔 До созвона 10 минут!'
+        badge_color = '#dc2626'
+        tip = 'Пора подключаться! Нажмите кнопку ниже, чтобы войти в Zoom.'
+        checklist = ''
+
+    content = f"""
+    <h2>Напоминание о созвоне</h2>
+    <p style="color:#475569;font-size:14px;margin-bottom:20px">Здравствуйте, {client_name}! {tip}</p>
+    <div class="row"><span class="label">Эксперт:</span><span class="value">{expert_name}</span></div>
+    <div class="row"><span class="label">Дата:</span><span class="value">{date}</span></div>
+    <div class="row"><span class="label">Время:</span><span class="value">{start_time}</span></div>
+    <div class="badge" style="background:{badge_color}">{badge_text}</div>
+    {checklist}
+    <hr class="divider">
+    <a href="{zoom_link}" class="btn btn-teal" style="font-size:16px;padding:14px 32px">🔗 Войти в Zoom</a>
+    <p style="color:#94a3b8;font-size:12px;margin-top:16px">Ссылка действительна только для вашего созвона.</p>
+    """
+    subject = f'⏰ Напоминание: созвон с {expert_name} через {"1 час" if minutes_before == 60 else "10 минут"} — {date} {start_time}'
+    _send(to_email, subject, _base_template(content))
