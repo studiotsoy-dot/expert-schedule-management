@@ -82,19 +82,17 @@ def _base_template(content: str) -> str:
 
 def send_booking_created(to_email: str, client_name: str, expert_name: str,
                           date: str, start_time: str, end_time: str, zoom_link: str):
-    """Письмо клиенту при создании записи. БЕЗ служебных комментариев."""
+    """Письмо клиенту при создании записи. Без ссылок на систему и Zoom (запись ещё не подтверждена)."""
     if not to_email:
         return
     content = f"""
     <h2>Вы записаны на созвон!</h2>
-    <p style="color:#475569;font-size:14px;margin-bottom:20px">Здравствуйте, {client_name}! Ваша запись успешно создана.</p>
+    <p style="color:#475569;font-size:14px;margin-bottom:20px">Здравствуйте, {client_name}! Ваша запись успешно создана и ожидает подтверждения.</p>
     <div class="row"><span class="label">Эксперт:</span><span class="value">{expert_name}</span></div>
     <div class="row"><span class="label">Дата:</span><span class="value">{date}</span></div>
     <div class="row"><span class="label">Время:</span><span class="value">{start_time} – {end_time}</span></div>
-    <div class="badge" style="background:#059669">✅ Запись создана</div>
-    <br>
-    <a href="{zoom_link}" class="btn btn-teal">🔗 Открыть Zoom</a>
-    <p style="color:#94a3b8;font-size:12px;margin-top:16px">Сохраните эту ссылку — она понадобится для созвона.</p>
+    <div class="badge" style="background:#d97706">⏳ Ожидает подтверждения</div>
+    <p style="color:#94a3b8;font-size:12px;margin-top:16px">Как только эксперт подтвердит запись, вы получите письмо со всеми деталями.</p>
     """
     _send(to_email, f'Запись на созвон с {expert_name} — {date}', _base_template(content))
 
@@ -102,15 +100,19 @@ def send_booking_created(to_email: str, client_name: str, expert_name: str,
 def send_status_changed(to_email: str, client_name: str, expert_name: str,
                          date: str, start_time: str, new_status: str,
                          comment: str, zoom_link: str):
-    """Письмо клиенту при смене статуса. Комментарий эксперта НЕ включается."""
+    """Письмо клиенту при смене статуса. Zoom и комментарий — только при confirmed."""
     if not to_email:
         return
     label = STATUS_LABELS.get(new_status, new_status)
     color = STATUS_COLORS.get(new_status, '#64748b')
 
     zoom_block = ''
-    if zoom_link and new_status not in ('cancelled_by_client', 'cancelled_by_expert', 'failed'):
-        zoom_block = f'<br><a href="{zoom_link}" class="btn btn-teal">🔗 Открыть Zoom</a>'
+    if new_status == 'confirmed' and zoom_link:
+        zoom_block = f'<br><a href="{zoom_link}" class="btn btn-teal">🔗 Войти в Zoom</a><p style="color:#94a3b8;font-size:12px;margin-top:12px">Сохраните эту ссылку — она понадобится для созвона.</p>'
+
+    comment_block = ''
+    if new_status == 'confirmed' and comment:
+        comment_block = f'<hr class="divider"><div style="font-size:13px;color:#64748b;margin-bottom:6px;font-weight:600;">💬 Комментарий эксперта:</div><div class="comment-box">{comment}</div>'
 
     content = f"""
     <h2>Статус вашей записи изменился</h2>
@@ -119,6 +121,7 @@ def send_status_changed(to_email: str, client_name: str, expert_name: str,
     <div class="row"><span class="label">Дата:</span><span class="value">{date}</span></div>
     <div class="row"><span class="label">Время:</span><span class="value">{start_time}</span></div>
     <div class="badge" style="background:{color}">{label}</div>
+    {comment_block}
     {zoom_block}
     """
     _send(to_email, f'Статус записи: {label} — {date}', _base_template(content))
@@ -157,18 +160,17 @@ def send_expert_new_booking(to_email: str, expert_name: str, client_name: str,
 
 def send_rescheduled(to_email: str, client_name: str, expert_name: str,
                       new_date: str, new_start_time: str, zoom_link: str):
-    """Письмо клиенту при переносе записи."""
+    """Письмо клиенту при переносе записи. Без Zoom — запись требует повторного подтверждения."""
     if not to_email:
         return
     content = f"""
     <h2>Ваша запись перенесена</h2>
-    <p style="color:#475569;font-size:14px;margin-bottom:20px">Здравствуйте, {client_name}! Время вашего созвона изменено.</p>
+    <p style="color:#475569;font-size:14px;margin-bottom:20px">Здравствуйте, {client_name}! Время вашего созвона изменено и ожидает подтверждения.</p>
     <div class="row"><span class="label">Эксперт:</span><span class="value">{expert_name}</span></div>
     <div class="row"><span class="label">Новая дата:</span><span class="value">{new_date}</span></div>
     <div class="row"><span class="label">Новое время:</span><span class="value">{new_start_time}</span></div>
     <div class="badge" style="background:#3b82f6">🔄 Перенесено</div>
-    <br>
-    <a href="{zoom_link}" class="btn btn-teal">🔗 Открыть Zoom</a>
+    <p style="color:#94a3b8;font-size:12px;margin-top:16px">Как только эксперт подтвердит новое время, вы получите письмо со ссылкой на Zoom.</p>
     """
     _send(to_email, f'Запись перенесена на {new_date}', _base_template(content))
 
