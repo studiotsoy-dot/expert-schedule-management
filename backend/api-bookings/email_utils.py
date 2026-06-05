@@ -195,3 +195,28 @@ def send_expert_rescheduled(to_email: str, expert_name: str, client_name: str,
     <a href="{APP_URL}" class="btn btn-app">🚀 Войти в систему</a>
     """
     _send(to_email, f'Перенос записи: {client_name} — {new_date}', _base_template(content))
+
+
+def send_manager_status_changed(to_email: str, manager_name: str, client_name: str,
+                                 expert_name: str, date: str, start_time: str,
+                                 new_status: str, comment: str):
+    """Письмо менеджеру при смене статуса записи экспертом."""
+    if not to_email:
+        return
+    label = STATUS_LABELS.get(new_status, new_status)
+    color = STATUS_COLORS.get(new_status, '#64748b')
+    comment_block = f'<hr class="divider"><div style="font-size:13px;color:#64748b;margin-bottom:6px;font-weight:600;">💬 Комментарий эксперта:</div><div class="comment-box">{comment}</div>' if comment else ''
+    content = f"""
+    <h2>Статус записи клиента изменён</h2>
+    <p style="color:#475569;font-size:14px;margin-bottom:20px">Здравствуйте, {manager_name}! Эксперт обновил статус вашей записи.</p>
+    <div class="row"><span class="label">Клиент:</span><span class="value"><strong>{client_name}</strong></span></div>
+    <div class="row"><span class="label">Эксперт:</span><span class="value">{expert_name}</span></div>
+    <hr class="divider">
+    <div class="row"><span class="label">Дата:</span><span class="value">{date}</span></div>
+    <div class="row"><span class="label">Время:</span><span class="value">{start_time}</span></div>
+    <div class="badge" style="background:{color}">{label}</div>
+    {comment_block}
+    <hr class="divider">
+    <a href="{APP_URL}" class="btn btn-app">🚀 Открыть систему</a>
+    """
+    _send(to_email, f'Статус записи [{client_name}]: {label}', _base_template(content))

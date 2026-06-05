@@ -9,7 +9,7 @@ import uuid
 from datetime import datetime
 import psycopg2
 
-from email_utils import send_booking_created, send_status_changed, send_rescheduled, send_expert_new_booking, send_expert_rescheduled
+from email_utils import send_booking_created, send_status_changed, send_rescheduled, send_expert_new_booking, send_expert_rescheduled, send_manager_status_changed
 
 CORS_HEADERS = {
     'Access-Control-Allow-Origin': '*',
@@ -255,13 +255,19 @@ def handler(event: dict, context) -> dict:
             cur.execute("UPDATE slots SET status='confirmed' WHERE id=%s", (slot_id,))
         conn.commit()
 
-        # Данные для письма
-        cur.execute("SELECT client_email, client_name, zoom_link FROM bookings WHERE id = %s", (booking_id,))
+        # Данные для писем
+        cur.execute("SELECT client_email, client_name, zoom_link, manager_id FROM bookings WHERE id = %s", (booking_id,))
         b_row = cur.fetchone()
         cur.execute("SELECT date, start_time FROM slots WHERE id = %s", (slot_id,))
         s_row = cur.fetchone()
         cur.execute("SELECT name FROM users WHERE id = %s", (expert_id,))
         e_row = cur.fetchone()
+        manager_email, manager_name = None, None
+        if b_row[3]:
+            cur.execute("SELECT email, name FROM users WHERE id = %s", (b_row[3],))
+            m_row = cur.fetchone()
+            if m_row:
+                manager_email, manager_name = m_row[0], m_row[1]
         conn.close()
 
         # Клиенту отправляем только при подтверждении или отмене
@@ -279,7 +285,23 @@ def handler(event: dict, context) -> dict:
                     zoom_link=b_row[2],
                 )
             except Exception as e:
-                print(f"Email error (update-status): {e}")
+                print(f"Email error (update-status client): {e}")
+
+        # Менеджеру отправляем при любом изменении статуса
+        if manager_email:
+            try:
+                send_manager_status_changed(
+                    to_email=manager_email,
+                    manager_name=manager_name or '',
+                    client_name=b_row[1],
+                    expert_name=e_row[0] if e_row else '',
+                    date=str(s_row[0]),
+                    start_time=str(s_row[1]),
+                    new_status=new_status,
+                    comment=comment,
+                )
+            except Exception as e:
+                print(f"Email error (update-status manager): {e}")
 
         return resp(200, {'status': new_status, 'comment': comment})
 
