@@ -8,6 +8,8 @@ import uuid
 from datetime import datetime
 import psycopg2
 
+PROTECTED_EMAIL = 'studiotsoy@gmail.com'
+
 CORS_HEADERS = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
@@ -58,13 +60,16 @@ def handler(event: dict, context) -> dict:
             conn.close()
             return resp(400, {'detail': 'user_id обязателен'})
 
-        cur.execute("SELECT id FROM users WHERE role = 'admin' AND is_active = 1")
-        admins = cur.fetchall()
-        cur.execute("SELECT role FROM users WHERE id = %s", (user_id,))
+        cur.execute("SELECT role, email FROM users WHERE id = %s", (user_id,))
         row = cur.fetchone()
         if not row:
             conn.close()
             return resp(404, {'detail': 'Пользователь не найден'})
+        if row[1] == PROTECTED_EMAIL:
+            conn.close()
+            return resp(403, {'detail': 'Этот аккаунт защищён и не может быть удалён'})
+        cur.execute("SELECT id FROM users WHERE role = 'admin' AND is_active = 1")
+        admins = cur.fetchall()
         if row[0] == 'admin' and len(admins) <= 1:
             conn.close()
             return resp(403, {'detail': 'Нельзя удалить последнего администратора'})
@@ -130,6 +135,12 @@ def handler(event: dict, context) -> dict:
         if not user_id:
             conn.close()
             return resp(400, {'detail': 'user_id обязателен'})
+
+        cur.execute("SELECT email FROM users WHERE id = %s", (user_id,))
+        target = cur.fetchone()
+        if target and target[0] == PROTECTED_EMAIL:
+            conn.close()
+            return resp(403, {'detail': 'Этот аккаунт защищён и не может быть изменён'})
 
         updates = []
         values = []

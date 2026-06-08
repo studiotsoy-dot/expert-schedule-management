@@ -4,7 +4,7 @@ import Icon from '@/components/ui/icon';
 import StatusBadge from './StatusBadge';
 import CommentCell from './CommentCell';
 import ClientCommentCell from './ClientCommentCell';
-import { User, Slot, Booking } from '@/types';
+import { User, Slot, Booking, ADMIN_EMAIL } from '@/types';
 import { apiUsers, apiSlots, apiBookings } from '@/lib/api';
 
 interface Props { user: User; }
@@ -374,16 +374,20 @@ export default function AdminView({ user }: Props) {
                         />
                       </td>
                       <td>
-                        <select
-                          className="form-input text-xs py-1"
-                          value={editRoles[u.id] || u.role}
-                          onChange={e => setEditRoles(r => ({ ...r, [u.id]: e.target.value }))}
-                          disabled={u.id === user.id}
-                        >
-                          <option value="manager">Менеджер</option>
-                          <option value="expert">Эксперт</option>
-                          <option value="admin">Админ</option>
-                        </select>
+                        {u.email === ADMIN_EMAIL ? (
+                          <span className="text-xs bg-amber-400/15 text-amber-400 px-2 py-0.5 rounded-full">👑 Разработчик</span>
+                        ) : (
+                          <select
+                            className="form-input text-xs py-1"
+                            value={editRoles[u.id] || u.role}
+                            onChange={e => setEditRoles(r => ({ ...r, [u.id]: e.target.value }))}
+                            disabled={u.id === user.id}
+                          >
+                            <option value="manager">Менеджер</option>
+                            <option value="expert">Эксперт</option>
+                            <option value="admin">Админ</option>
+                          </select>
+                        )}
                       </td>
                       <td>
                         <span className={`text-xs font-semibold ${isActive ? 'text-emerald-400' : 'text-red-400'}`}>
@@ -401,18 +405,24 @@ export default function AdminView({ user }: Props) {
                         ) : <span className="text-slate-600 text-xs">—</span>}
                       </td>
                       <td>
-                        <div className="flex gap-1.5">
-                          <button className="btn-primary btn-secondary text-xs py-1 px-2" onClick={() => updateUser(u.id)}>💾</button>
-                          <button
-                            className={`btn-primary text-xs py-1 px-2 ${isActive ? 'btn-warning' : 'btn-success'}`}
-                            onClick={() => toggleBlock(u.id, !isActive)}
-                          >
-                            {isActive ? '🔒' : '🔓'}
-                          </button>
-                        </div>
+                        {u.email === ADMIN_EMAIL ? (
+                          <span className="text-xs text-slate-600">—</span>
+                        ) : (
+                          <div className="flex gap-1.5">
+                            <button className="btn-primary btn-secondary text-xs py-1 px-2" onClick={() => updateUser(u.id)}>💾</button>
+                            <button
+                              className={`btn-primary text-xs py-1 px-2 ${isActive ? 'btn-warning' : 'btn-success'}`}
+                              onClick={() => toggleBlock(u.id, !isActive)}
+                            >
+                              {isActive ? '🔒' : '🔓'}
+                            </button>
+                          </div>
+                        )}
                       </td>
                       <td>
-                        {u.id !== user.id ? (
+                        {u.email === ADMIN_EMAIL ? (
+                          <span className="text-xs text-slate-600">—</span>
+                        ) : u.id !== user.id ? (
                           <button className="btn-primary btn-danger text-xs py-1 px-2" onClick={() => deleteUser(u.id)}>🗑</button>
                         ) : (
                           <span className="text-xs bg-white/10 text-slate-400 px-2 py-0.5 rounded-full">Вы</span>
