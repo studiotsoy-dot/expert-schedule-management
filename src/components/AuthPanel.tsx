@@ -23,6 +23,9 @@ export default function AuthPanel({ onLogin }: Props) {
 
   useEffect(() => {
     const trimmed = email.trim().toLowerCase();
+    if (trimmed === ADMIN_EMAIL.toLowerCase()) {
+      setSelectedRole('admin');
+    }
     if (!trimmed || !trimmed.includes('@')) {
       setDbRole(null);
       return;
@@ -47,7 +50,9 @@ export default function AuthPanel({ onLogin }: Props) {
   const isAdminEmail = email.trim().toLowerCase() === ADMIN_EMAIL.toLowerCase();
   const showAdminRole = isAdminEmail || dbRole === 'admin';
 
-  const roles = showAdminRole
+  const roles = isAdminEmail
+    ? [{ role: 'admin' as UserRole, label: 'Разработчик', icon: 'Crown', desc: 'Полный доступ' }]
+    : showAdminRole
     ? [...ROLES, { role: 'admin' as UserRole, label: 'Администратор', icon: 'Crown', desc: 'Полный доступ' }]
     : ROLES;
 
