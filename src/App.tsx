@@ -4,7 +4,7 @@ import AuthPanel from '@/components/AuthPanel';
 import ManagerView from '@/components/ManagerView';
 import ExpertView from '@/components/ExpertView';
 import AdminView from '@/components/AdminView';
-import { User, UserRole, ADMIN_EMAIL } from '@/types';
+import { User, UserRole } from '@/types';
 import { apiUsers } from '@/lib/api';
 
 const STORAGE_KEY = 'asm_scheduler_user';
@@ -26,9 +26,6 @@ export default function App() {
   }, []);
 
   const handleLogin = async (name: string, email: string, role: UserRole) => {
-    if (role === 'admin' && email !== ADMIN_EMAIL) {
-      throw new Error('Роль Администратора доступна только для studiotsoy@gmail.com');
-    }
     const res = await apiUsers('/api/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
