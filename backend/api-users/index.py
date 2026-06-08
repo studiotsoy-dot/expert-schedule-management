@@ -75,8 +75,16 @@ def handler(event: dict, context) -> dict:
         conn.close()
         return resp(200, {'status': 'deleted'})
 
-    # GET /
+    # GET / или GET ?email=...
     if method == 'GET':
+        email_param = params.get('email', '').strip().lower()
+        if email_param:
+            cur.execute("SELECT id, name, email, role, portfolio_url, is_active, created_at FROM users WHERE email = %s", (email_param,))
+            row = cur.fetchone()
+            conn.close()
+            if not row:
+                return resp(404, {'detail': 'Пользователь не найден'})
+            return resp(200, row_to_user(row))
         cur.execute("SELECT id, name, email, role, portfolio_url, is_active, created_at FROM users ORDER BY created_at")
         rows = cur.fetchall()
         conn.close()
@@ -101,9 +109,6 @@ def handler(event: dict, context) -> dict:
             if not user['is_active']:
                 conn.close()
                 return resp(403, {'detail': 'Ваш аккаунт заблокирован'})
-            if user['role'] != role:
-                conn.close()
-                return resp(403, {'detail': 'Эта почта уже зарегистрирована с другой ролью'})
             conn.close()
             return resp(200, user)
 

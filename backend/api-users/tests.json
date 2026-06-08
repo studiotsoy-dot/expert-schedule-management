@@ -1,11 +1,11 @@
 {
   "tests": [
     {
-      "name": "GET users list",
+      "name": "GET user by email returns role",
       "method": "GET",
-      "path": "/",
+      "path": "/?email=studiotsoy@gmail.com",
       "expectedStatus": 200,
-      "expectedBody": [{"id": "string"}],
+      "expectedBody": {"role": "admin"},
       "bodyMatcher": "partial"
     }
   ]

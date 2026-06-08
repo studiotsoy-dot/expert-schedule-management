@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Icon from '@/components/ui/icon';
 import { UserRole, ADMIN_EMAIL } from '@/types';
+import { apiUsers } from '@/lib/api';
 
 interface Props {
   onLogin: (name: string, email: string, role: UserRole) => Promise<void>;
@@ -17,19 +18,42 @@ export default function AuthPanel({ onLogin }: Props) {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [dbRole, setDbRole] = useState<UserRole | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const isAdmin = email === ADMIN_EMAIL;
-  const roles = isAdmin
+  useEffect(() => {
+    const trimmed = email.trim().toLowerCase();
+    if (!trimmed || !trimmed.includes('@')) {
+      setDbRole(null);
+      return;
+    }
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await apiUsers(`/api/users?email=${encodeURIComponent(trimmed)}`);
+        if (res.ok) {
+          const data = await res.json();
+          setDbRole(data.role as UserRole);
+          setSelectedRole(data.role as UserRole);
+        } else {
+          setDbRole(null);
+        }
+      } catch {
+        setDbRole(null);
+      }
+    }, 600);
+  }, [email]);
+
+  const isAdminEmail = email.trim().toLowerCase() === ADMIN_EMAIL.toLowerCase();
+  const showAdminRole = isAdminEmail || dbRole === 'admin';
+
+  const roles = showAdminRole
     ? [...ROLES, { role: 'admin' as UserRole, label: 'Администратор', icon: 'Crown', desc: 'Полный доступ' }]
     : ROLES;
 
   const handleSubmit = async () => {
     if (!name.trim() || !email.trim()) {
       setError('Введите имя и email');
-      return;
-    }
-    if (selectedRole === 'admin' && email !== ADMIN_EMAIL) {
-      setError('Роль Администратора доступна только для studiotsoy@gmail.com');
       return;
     }
     setError('');
@@ -46,7 +70,6 @@ export default function AuthPanel({ onLogin }: Props) {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md animate-fade-in">
-        {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-3 mb-4">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-400 to-sky-400 flex items-center justify-center">
@@ -60,7 +83,6 @@ export default function AuthPanel({ onLogin }: Props) {
         </div>
 
         <div className="glass-card p-6">
-          {/* Role selector */}
           <p className="text-xs text-slate-400 uppercase tracking-wider mb-3 font-semibold">Выберите роль</p>
           <div className="grid grid-cols-2 gap-2 mb-5">
             {roles.map(r => (
@@ -80,7 +102,6 @@ export default function AuthPanel({ onLogin }: Props) {
             ))}
           </div>
 
-          {/* Inputs */}
           <div className="space-y-3 mb-5">
             <input
               className="form-input w-full"
@@ -99,10 +120,10 @@ export default function AuthPanel({ onLogin }: Props) {
             />
           </div>
 
-          {email === ADMIN_EMAIL && (
-            <div className="text-xs text-amber-400 mb-3 flex items-center gap-1">
-              <Icon name="Crown" size={12} />
-              Доступна роль Администратора
+          {dbRole === 'admin' && (
+            <div className="text-xs text-amber-400 mb-3 flex items-center gap-1.5 bg-amber-400/10 rounded-lg px-3 py-2">
+              <Icon name="Crown" size={13} />
+              Для этого аккаунта доступна роль Администратора
             </div>
           )}
 
