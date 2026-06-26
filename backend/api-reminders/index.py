@@ -121,67 +121,53 @@ def handler(event: dict, context) -> dict:
 
     conn = psycopg2.connect(os.environ['DATABASE_URL'])
     cur = conn.cursor()
-
     now_msk = datetime.now(timezone.utc).replace(tzinfo=None) + MSK_OFFSET
-
-    sent_1h = 0
-    sent_10m = 0
+    sent_1h = sent_10m = 0
     errors = []
 
-    cur.execute("""
-        SELECT
-            b.id, b.client_email, b.client_name, b.zoom_link,
-            b.reminder_1h_sent, b.reminder_10m_sent,
-            s.date, s.start_time,
-            u.name AS expert_name
-        FROM bookings b
-        JOIN slots s ON s.id = b.slot_id
-        JOIN users u ON u.id = s.expert_id
-        WHERE b.call_status IN ('pending', 'confirmed')
-          AND b.client_email IS NOT NULL
-          AND b.zoom_link IS NOT NULL
-          AND (b.reminder_1h_sent = FALSE OR b.reminder_10m_sent = FALSE)
-    """)
-    rows = cur.fetchall()
+    try:
+        cur.execute("""
+            SELECT b.id, b.client_email, b.client_name, b.zoom_link,
+                   b.reminder_1h_sent, b.reminder_10m_sent,
+                   s.date, s.start_time, u.name
+            FROM bookings b
+            JOIN slots s ON s.id = b.slot_id
+            JOIN users u ON u.id = s.expert_id
+            WHERE b.call_status IN ('pending', 'confirmed')
+              AND b.client_email IS NOT NULL
+              AND b.zoom_link IS NOT NULL
+              AND (b.reminder_1h_sent = FALSE OR b.reminder_10m_sent = FALSE)
+        """)
+        rows = cur.fetchall()
 
-    for row in rows:
-        (booking_id, client_email, client_name, zoom_link,
-         reminder_1h_sent, reminder_10m_sent,
-         slot_date, slot_start, expert_name) = row
-
-        try:
-            slot_dt = datetime.strptime(f"{slot_date} {slot_start}", "%Y-%m-%d %H:%M")
-        except Exception as e:
-            errors.append(f"parse error {booking_id}: {e}")
-            continue
-
-        minutes_until = (slot_dt - now_msk).total_seconds() / 60
-
-        if not reminder_1h_sent and 55 <= minutes_until <= 65:
+        for row in rows:
+            booking_id, client_email, client_name, zoom_link, r1h, r10m, slot_date, slot_start, expert_name = row
             try:
-                _send_reminder(client_email, client_name or '', expert_name or '',
-                               str(slot_date), str(slot_start), zoom_link, 60)
-                cur.execute("UPDATE bookings SET reminder_1h_sent = TRUE WHERE id = %s", (booking_id,))
-                sent_1h += 1
+                slot_dt = datetime.strptime(f"{slot_date} {slot_start}", "%Y-%m-%d %H:%M")
             except Exception as e:
-                errors.append(f"1h email {booking_id}: {e}")
+                errors.append(f"parse error {booking_id}: {e}")
+                continue
 
-        if not reminder_10m_sent and 7 <= minutes_until <= 13:
-            try:
-                _send_reminder(client_email, client_name or '', expert_name or '',
-                               str(slot_date), str(slot_start), zoom_link, 10)
-                cur.execute("UPDATE bookings SET reminder_10m_sent = TRUE WHERE id = %s", (booking_id,))
-                sent_10m += 1
-            except Exception as e:
-                errors.append(f"10m email {booking_id}: {e}")
+            minutes_until = (slot_dt - now_msk).total_seconds() / 60
 
-    conn.commit()
-    conn.close()
+            if not r1h and 55 <= minutes_until <= 65:
+                try:
+                    _send_reminder(client_email, client_name or '', expert_name or '', str(slot_date), str(slot_start), zoom_link, 60)
+                    cur.execute("UPDATE bookings SET reminder_1h_sent = TRUE WHERE id = %s", (booking_id,))
+                    sent_1h += 1
+                except Exception as e:
+                    errors.append(f"1h email {booking_id}: {e}")
 
-    print(f"Reminders sent: 1h={sent_1h}, 10m={sent_10m}, checked={len(rows)}, errors={errors}")
-    return resp(200, {
-        'sent_1h': sent_1h,
-        'sent_10m': sent_10m,
-        'checked': len(rows),
-        'errors': errors,
-    })
+            if not r10m and 7 <= minutes_until <= 13:
+                try:
+                    _send_reminder(client_email, client_name or '', expert_name or '', str(slot_date), str(slot_start), zoom_link, 10)
+                    cur.execute("UPDATE bookings SET reminder_10m_sent = TRUE WHERE id = %s", (booking_id,))
+                    sent_10m += 1
+                except Exception as e:
+                    errors.append(f"10m email {booking_id}: {e}")
+
+        conn.commit()
+        print(f"Reminders sent: 1h={sent_1h}, 10m={sent_10m}, checked={len(rows)}, errors={errors}")
+        return resp(200, {'sent_1h': sent_1h, 'sent_10m': sent_10m, 'checked': len(rows), 'errors': errors})
+    finally:
+        conn.close()
